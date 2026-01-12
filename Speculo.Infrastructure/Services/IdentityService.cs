@@ -43,9 +43,17 @@ public class IdentityService : IIdentityService
         return new AuthResponse(user.Id, user.Email, user.FullName, "JWT_TOKEN_PLACEHOLDER");
     }
 
-    public Task<AuthResponse> LoginAsync(string email, string password, CancellationToken ct = default)
+
+    public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
-        // Ovo ćemo implementirati sledeće!
-        throw new NotImplementedException();
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, ct);
+        if(user==null) 
+            throw new Exception("Invalid email or password");
+        var isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+        if(!isPasswordValid)
+            throw new Exception("Invalid email or password");
+
+        return new AuthResponse(user.Id, user.Email, user.FullName, "JWT_TOKEN_PLACEHOLDER");
+
     }
 }
