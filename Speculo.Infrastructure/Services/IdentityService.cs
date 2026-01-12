@@ -9,13 +9,13 @@ namespace Speculo.Infrastructure.Services;
 public class IdentityService : IIdentityService
 {
     private readonly ISpeculoDbContext _context;
+    private readonly IJwtTokenGenerator _tokenGenerator;
 
-    // Uzimamo bazu kroz Konstruktor (Dependency Injection)
-    public IdentityService(ISpeculoDbContext context)
+    public IdentityService(ISpeculoDbContext context, IJwtTokenGenerator tokenGenerator)
     {
         _context = context;
+        _tokenGenerator = tokenGenerator;
     }
-
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
     {
         // 1. Provera da li korisnik već postoji
@@ -38,9 +38,9 @@ public class IdentityService : IIdentityService
         // 4. Upis u bazu
         _context.Users.Add(user);
         await _context.SaveChangesAsync(ct);
-
+        var token = _tokenGenerator.GenerateToken(user);
         // Vraćamo odgovor (Token je za sada prazan, to je sledeća lekcija!)
-        return new AuthResponse(user.Id, user.Email, user.FullName, "JWT_TOKEN_PLACEHOLDER");
+        return new AuthResponse(user.Id, user.Email, user.FullName, token);
     }
 
 
@@ -52,8 +52,8 @@ public class IdentityService : IIdentityService
         var isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
         if(!isPasswordValid)
             throw new Exception("Invalid email or password");
-
-        return new AuthResponse(user.Id, user.Email, user.FullName, "JWT_TOKEN_PLACEHOLDER");
+         var token = _tokenGenerator.GenerateToken(user);
+        return new AuthResponse(user.Id, user.Email, user.FullName, token);
 
     }
 }
