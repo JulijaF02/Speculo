@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Speculo.Application.Common.Interfaces;
 using Speculo.Infrastructure.Services;
+using Speculo.Infrastructure.Authentication;
 
 namespace Speculo.Infrastructure;
 
@@ -20,6 +21,12 @@ public static class DependencyInjection
 
         // 3. Registracija Identity servisa
         services.AddScoped<IIdentityService, IdentityService>();
+
+        // 4. Registracija JWT podešavanja (Options Pattern)
+        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+
+        // 5. Registracija JWT Token Generator-a
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;
     }
