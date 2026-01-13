@@ -9,19 +9,17 @@ public class CurrentUserProvider(IHttpContextAccessor httpContextAccessor) : ICu
     {
         get
         {
-            //getting the user object from the current request
             var user = httpContextAccessor.HttpContext?.User;
 
-            //look for a name identifier or a sub claim
-            var idClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user?.FindFirst("sub")?.Value;
+            var idClaim = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                        ?? user?.FindFirst("sub")?.Value;
 
-            //try to turn that text into an guid id
             if (Guid.TryParse(idClaim, out var guid))
             {
                 return guid;
             }
-            return null;
 
+            return null;
         }
     }
 }

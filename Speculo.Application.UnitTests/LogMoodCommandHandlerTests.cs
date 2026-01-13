@@ -1,0 +1,64 @@
+﻿using FluentAssertions;
+using NSubstitute;
+using Speculo.Application.Common.Interfaces;
+using Speculo.Application.Features.Events.Commands.LogMood;
+using Speculo.Domain.Events;
+
+namespace Speculo.Application.UnitTests;
+
+public class LogMoodCommandHandlerTests
+{
+    private readonly IEventStore _eventStoreMock;
+    private readonly ICurrentUserProvider _userProviderMock;
+    private readonly LogMoodCommandHandler _handler;
+
+    public LogMoodCommandHandlerTests()
+    {
+        _eventStoreMock = Substitute.For<IEventStore>();
+        _userProviderMock = Substitute.For<ICurrentUserProvider>();
+
+        _handler = new LogMoodCommandHandler(_eventStoreMock, _userProviderMock);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSaveEventAndReturnId_WhenCommandIsValid()
+    {
+        // Arrange
+        var command = new LogMoodCommand(Score: 8, Notes: "Feeling great!");
+        var userId = Guid.NewGuid();
+        var expectedEventId = Guid.NewGuid();
+
+        _userProviderMock.UserId.Returns(userId);
+        _eventStoreMock.SaveAsync(Arg.Any<MoodLoggedEvent>()).Returns(expectedEventId);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().Be(expectedEventId);
+
+        await _eventStoreMock.Received(1).SaveAsync(Arg.Is<MoodLoggedEvent>(e =>
+            e.UserId == userId &&
+            e.Score == 8 &&
+            e.Notes == "Feeling great!"
+        ));
+    }
+    [Fact]
+    public async Task Handle_ShouldUseEmptyGuid_WhenUserIsNotFound()
+    {
+        // Arrange
+        var command = new LogMoodCommand(Score: 5, Notes: "Neutral");
+        _userProviderMock.UserId.Returns((Guid?)null); // Simulate a missing user
+
+        var expectedEventId = Guid.NewGuid();
+        _eventStoreMock.SaveAsync(Arg.Any<MoodLoggedEvent>()).Returns(expectedEventId);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert: Verify that even with a null user, we still called Save with Guid.Empty
+        await _eventStoreMock.Received(1).SaveAsync(Arg.Is<MoodLoggedEvent>(e =>
+            e.UserId == Guid.Empty
+        ));
+    }
+}

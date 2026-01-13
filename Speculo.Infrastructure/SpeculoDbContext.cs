@@ -4,7 +4,6 @@ using Speculo.Domain.Entities;
 
 namespace Speculo.Infrastructure;
 
-// Primary constructor: 'options' are passed directly in the class signature
 public class SpeculoDbContext(DbContextOptions<SpeculoDbContext> options)
     : DbContext(options), ISpeculoDbContext
 {

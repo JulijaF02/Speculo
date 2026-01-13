@@ -12,21 +12,19 @@ public class EventStore(ISpeculoDbContext context, ICurrentUserProvider currentU
         where TEvent : IDomainEvent
     {
         var eventId = Guid.NewGuid();
-        // 1. Create the database entity
+
         var dbEvent = new Event
         {
-            Id = Guid.NewGuid(),
-            UserId = currentUserProvider.UserId ?? Guid.Empty, // TODO: We will get this from the logged-in user soon!
+            Id = eventId,
+            UserId = currentUserProvider.UserId ?? Guid.Empty,
             Type = domainEvent.GetType().Name,
             Timestamp = domainEvent.OccurredOn,
-
-            // 2. Serialize the C# object (like MoodLoggedEvent) into JSON
             Payload = JsonSerializer.Serialize(domainEvent)
         };
 
-        // 3. Add to the context and save
         context.Events.Add(dbEvent);
         await context.SaveChangesAsync(ct);
+
         return eventId;
     }
 
