@@ -9,13 +9,13 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
     public void Configure(EntityTypeBuilder<Event> builder)
     {
         builder.HasKey(e => e.Id);
-        
-        // Index za bržu pretragu svih event-ova jednog korisnika
+
+        // Index for faster searching of all events for a single user
         builder.HasIndex(e => e.UserId);
-        
-        // Postgres specifičan tip za JSON podatke
+
+        // Postgres-specific type for JSON data
         builder.Property(e => e.Payload).HasColumnType("jsonb");
-        
+
         builder.Property(e => e.Type).IsRequired().HasMaxLength(100);
     }
 }

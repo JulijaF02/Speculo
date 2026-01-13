@@ -4,21 +4,18 @@ using Speculo.Domain.Entities;
 
 namespace Speculo.Infrastructure;
 
-public class SpeculoDbContext : DbContext, ISpeculoDbContext
+public class SpeculoDbContext(DbContextOptions<SpeculoDbContext> options)
+    : DbContext(options), ISpeculoDbContext
 {
-    public SpeculoDbContext(DbContextOptions<SpeculoDbContext> options) 
-        : base(options)
-    {
-    }
-
-    public DbSet<User> Users { get; set; }
-    public DbSet<Event> Events { get; set; }
-    public DbSet<DailyAggregate> DailyAggregates { get; set; }
+    public DbSet<User> Users { get; set; } = null!;
+    public DbSet<Event> Events { get; set; } = null!;
+    public DbSet<DailyAggregate> DailyAggregates { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-       modelBuilder.ApplyConfigurationsFromAssembly(typeof(SpeculoDbContext).Assembly);
+        // This automatically finds all our 'IEntityTypeConfiguration' classes
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SpeculoDbContext).Assembly);
     }
 }
