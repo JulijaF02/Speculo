@@ -6,7 +6,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Ovde ćemo dodavati npr. FluentValidation, MediatR i slično
+        //Registering MediaR for the entire Application assembly
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
+
         return services;
     }
 }

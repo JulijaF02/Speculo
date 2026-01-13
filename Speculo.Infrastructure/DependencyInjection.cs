@@ -28,6 +28,11 @@ public static class DependencyInjection
         // 5. Registracija JWT Token Generator-a
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
+        //6. Registering EventStore 
+        services.AddScoped<IEventStore, EventStore>();
+        //7. Registering Current user provider
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
         return services;
     }
 }
