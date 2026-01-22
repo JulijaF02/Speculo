@@ -30,8 +30,7 @@ public class EventStore(ISpeculoDbContext context, ICurrentUserProvider currentU
 
     public async Task<IEnumerable<IDomainEvent>> GetEventsAsync(Guid userId, CancellationToken ct = default)
     {
-        // This is a placeholder - retrieving events is more complex because 
-        // we have to "Deserialize" them back into their specific types!
-        return await Task.FromResult(new List<IDomainEvent>());
+        // TODO: Implement event retrieval and deserialization logic
+        return await Task.FromResult(Enumerable.Empty<IDomainEvent>());
     }
 }
