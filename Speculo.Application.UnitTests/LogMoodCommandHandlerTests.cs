@@ -51,7 +51,7 @@ public class LogMoodCommandHandlerTests
     {
         // Arrange
         var command = new LogMoodCommand(Score: 5, Notes: "Neutral");
-        _userProviderMock.UserId.Returns((Guid?)null);
+        _userProviderMock.UserId.Returns((Guid?)null); 
 
         var expectedEventId = Guid.NewGuid();
         _eventStoreMock.SaveAsync(Arg.Any<MoodLoggedEvent>()).Returns(expectedEventId);
