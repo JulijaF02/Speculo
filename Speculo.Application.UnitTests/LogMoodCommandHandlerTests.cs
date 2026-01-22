@@ -6,13 +6,15 @@ using Speculo.Domain.Events;
 
 namespace Speculo.Application.UnitTests;
 
+[TestFixture]
 public class LogMoodCommandHandlerTests
 {
-    private readonly IEventStore _eventStoreMock;
-    private readonly ICurrentUserProvider _userProviderMock;
-    private readonly LogMoodCommandHandler _handler;
+    private IEventStore _eventStoreMock = null!;
+    private ICurrentUserProvider _userProviderMock = null!;
+    private LogMoodCommandHandler _handler = null!;
 
-    public LogMoodCommandHandlerTests()
+    [SetUp]
+    public void Setup()
     {
         _eventStoreMock = Substitute.For<IEventStore>();
         _userProviderMock = Substitute.For<ICurrentUserProvider>();
@@ -20,7 +22,7 @@ public class LogMoodCommandHandlerTests
         _handler = new LogMoodCommandHandler(_eventStoreMock, _userProviderMock);
     }
 
-    [Fact]
+    [Test]
     public async Task Handle_ShouldSaveEventAndReturnId_WhenCommandIsValid()
     {
         // Arrange
@@ -43,12 +45,13 @@ public class LogMoodCommandHandlerTests
             e.Notes == "Feeling great!"
         ));
     }
-    [Fact]
+
+    [Test]
     public async Task Handle_ShouldUseEmptyGuid_WhenUserIsNotFound()
     {
         // Arrange
         var command = new LogMoodCommand(Score: 5, Notes: "Neutral");
-        _userProviderMock.UserId.Returns((Guid?)null); // Simulate a missing user
+        _userProviderMock.UserId.Returns((Guid?)null);
 
         var expectedEventId = Guid.NewGuid();
         _eventStoreMock.SaveAsync(Arg.Any<MoodLoggedEvent>()).Returns(expectedEventId);
