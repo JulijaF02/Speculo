@@ -29,7 +29,8 @@ dotnet test --no-build --verbosity minimal
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "X Tests Failed!" -ForegroundColor Red
-} else {
+}
+else {
     Write-Host "V All Tests Passed!" -ForegroundColor Green
 }
 
