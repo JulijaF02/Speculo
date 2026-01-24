@@ -1,4 +1,4 @@
-# TL;DR (Quick Overview)
+#Quick Overview
 
 Speculo is a backend system that:
 *   Stores personal life data as immutable events instead of overwriting it.
