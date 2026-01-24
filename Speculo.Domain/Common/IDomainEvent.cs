@@ -4,5 +4,6 @@ namespace Speculo.Domain.Common;
 
 public interface IDomainEvent
 {
-    DateTimeOffset OccurredOn {get;}
+    Guid Id { get; }
+    DateTimeOffset OccurredOn { get; }
 }

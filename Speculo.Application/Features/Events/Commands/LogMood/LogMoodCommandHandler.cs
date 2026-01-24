@@ -10,7 +10,10 @@ public class LogMoodCommandHandler(IEventStore eventStore, ICurrentUserProvider 
     public async Task<Guid> Handle(LogMoodCommand request, CancellationToken ct)
     {
         var userId = currentUserProvider.UserId;
-
+        if (currentUserProvider.UserId == null)
+        {
+            throw new UnauthorizedAccessException();
+        }
         var moodEvent = new MoodLoggedEvent(
             UserId: userId ?? Guid.Empty,
             Score: request.Score,

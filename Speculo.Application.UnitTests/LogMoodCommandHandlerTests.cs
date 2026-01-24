@@ -47,21 +47,15 @@ public class LogMoodCommandHandlerTests
     }
 
     [Test]
-    public async Task Handle_ShouldUseEmptyGuid_WhenUserIsNotFound()
+    public void Handle_ShouldThrowUnauthorized_WhenUserIsNotFound()
     {
         // Arrange
         var command = new LogMoodCommand(Score: 5, Notes: "Neutral");
-        _userProviderMock.UserId.Returns((Guid?)null); 
+        _userProviderMock.UserId.Returns((Guid?)null);
 
-        var expectedEventId = Guid.NewGuid();
-        _eventStoreMock.SaveAsync(Arg.Any<MoodLoggedEvent>()).Returns(expectedEventId);
-
-        // Act
-        await _handler.Handle(command, CancellationToken.None);
-
-        // Assert: Verify that even with a null user, we still called Save with Guid.Empty
-        await _eventStoreMock.Received(1).SaveAsync(Arg.Is<MoodLoggedEvent>(e =>
-            e.UserId == Guid.Empty
-        ));
+        // Act & Assert
+        Assert.ThrowsAsync<UnauthorizedAccessException>(
+            async () => await _handler.Handle(command, CancellationToken.None)
+        );
     }
 }

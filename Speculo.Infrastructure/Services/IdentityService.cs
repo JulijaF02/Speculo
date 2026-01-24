@@ -36,7 +36,7 @@ public class IdentityService(ISpeculoDbContext context, IJwtTokenGenerator token
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
         var user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email, ct);
-        if (user == null)
+        if (user is null)
             throw new Exception("Invalid email or password");
 
         var isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
