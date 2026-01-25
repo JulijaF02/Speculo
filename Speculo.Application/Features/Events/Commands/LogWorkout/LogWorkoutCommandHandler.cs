@@ -10,14 +10,11 @@ public class LogWorkoutCommandHandler(IEventStore eventStore, ICurrentUserProvid
 {
     public async Task<Guid> Handle(LogWorkoutCommand request, CancellationToken ct)
     {
-        var userId = currentUserProvider.UserId;
-        if (currentUserProvider.UserId == null)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        var userId = currentUserProvider.UserId
+            ?? throw new UnauthorizedAccessException();
 
         var workoutEvent = new WorkoutLoggedEvent(
-            UserId: userId ?? Guid.Empty,
+            UserId: userId,
             Type: request.Type,
             Minutes: request.Minutes,
             Score: request.Score,

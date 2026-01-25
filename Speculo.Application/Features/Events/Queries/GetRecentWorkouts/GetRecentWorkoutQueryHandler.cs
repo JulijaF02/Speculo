@@ -8,8 +8,8 @@ public class GetRecentWorkoutQueryHandler(IEventStore eventStore, ICurrentUserPr
 {
     public async Task<IEnumerable<WorkoutLogDto>> Handle(GetRecentWorkoutQuery request, CancellationToken cancellationToken)
     {
-        if (currentUserProvider.UserId == null) throw new UnauthorizedAccessException();
-        var userId = currentUserProvider.UserId.Value;
+        var userId = currentUserProvider.UserId
+             ?? throw new UnauthorizedAccessException();
 
         var events = await eventStore.GetEventsAsync(userId, cancellationToken);
         return events.OfType<WorkoutLoggedEvent>().Select(e => new WorkoutLogDto(e.Id, e.Type, e.Minutes, e.Score, e.OccurredOn));

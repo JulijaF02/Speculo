@@ -12,7 +12,8 @@ public class EventStore(ISpeculoDbContext context, ICurrentUserProvider currentU
     private static readonly Dictionary<string, Type> _eventTypeRegistry = new()
     {
         {nameof(MoodLoggedEvent), typeof(MoodLoggedEvent)},
-        {nameof(WorkoutLoggedEvent), typeof(WorkoutLoggedEvent)}
+        {nameof(WorkoutLoggedEvent), typeof(WorkoutLoggedEvent)},
+        {nameof(SleepLoggedEvent), typeof(SleepLoggedEvent)}
     };
     public async Task<Guid> SaveAsync<TEvent>(TEvent domainEvent, CancellationToken ct = default)
         where TEvent : IDomainEvent

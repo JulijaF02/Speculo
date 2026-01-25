@@ -8,8 +8,8 @@ IRequestHandler<GetRecentMoodQuery, IEnumerable<MoodLogDto>>
 {
     public async Task<IEnumerable<MoodLogDto>> Handle(GetRecentMoodQuery request, CancellationToken cancellationToken)
     {
-        if (currentUserProvider.UserId == null) throw new UnauthorizedAccessException();
-        var userId = currentUserProvider.UserId.Value;
+        var userId = currentUserProvider.UserId
+             ?? throw new UnauthorizedAccessException();
 
         var events = await eventStore.GetEventsAsync(userId, cancellationToken);
         return events.OfType<MoodLoggedEvent>()
