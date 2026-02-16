@@ -1,0 +1,53 @@
+{
+  // ===== FORMATTING =====
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "[csharp]": {
+    "editor.defaultFormatter": "muhammad-sammy.csharp",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  // ===== CODE VISIBILITY =====
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+  "editor.guides.indentation": true,
+  "editor.inlayHints.enabled": "on",
+  "editor.renderWhitespace": "none",
+  "indentRainbow.enabled": false,
+  // ===== INTELLISENSE IMPROVEMENTS =====
+  "editor.suggestSelection": "first",
+  "editor.quickSuggestions": {
+    "other": "on",
+    "comments": "off",
+    "strings": "off"
+  },
+  "editor.parameterHints.enabled": true,
+  "editor.suggest.snippetsPreventQuickSuggestions": false,
+  // ===== ERROR HIGHLIGHTING =====
+  "problems.decorations.enabled": true,
+  // ===== FILE ORGANIZATION =====
+  "explorer.fileNesting.enabled": false,
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/.vs": true
+  },
+  // ===== C# SPECIFIC =====
+  "dotnet.defaultSolution": "Speculo.sln",
+  "csharp.semanticHighlighting.enabled": true,
+  // ===== TERMINAL =====
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.fontSize": 13,
+  // ===== GIT =====
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  // ===== PERFORMANCE =====
+  "files.watcherExclude": {
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/node_modules/**": true
+  },
+  "dotnet.inlayHints.enableInlayHintsForParameters": true,
+  "csharp.inlayHints.enableInlayHintsForTypes": true
+}

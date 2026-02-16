@@ -1,0 +1,24 @@
+{
+    "recommendations": [
+        // ===== CRITICAL FOR C# =====
+        "ms-dotnettools.csdevkit",
+        "ms-dotnettools.csharp",
+        // ===== CODE QUALITY =====
+        "josefpihrt-vscode.roslynator",
+        "usernamehw.errorlens",
+        // ===== PRODUCTIVITY =====
+        "kreativjosbasic.csharpextensions",
+        "k--kato.docomment",
+        "aaron-bond.better-comments",
+        // ===== API TESTING =====
+        "humao.rest-client",
+        // ===== FORMATTING =====
+        "editorconfig.editorconfig",
+        // ===== GIT =====
+        "eamodio.gitlens",
+        // ===== VISUAL IMPROVEMENTS =====
+        "oderwat.indent-rainbow",
+        "christian-kohler.path-intellisense"
+    ],
+    "unwantedRecommendations": []
+}

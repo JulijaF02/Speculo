@@ -3,26 +3,24 @@ using NSubstitute;
 using Speculo.Application.Common.Interfaces;
 using Speculo.Application.Features.Events.Commands.LogMood;
 using Speculo.Domain.Events;
+using Xunit;
 
-namespace Speculo.Application.UnitTests;
+namespace Speculo.Application.UnitTests.Features.Events.Commands;
 
-[TestFixture]
 public class LogMoodCommandHandlerTests
 {
-    private IEventStore _eventStoreMock = null!;
-    private ICurrentUserProvider _userProviderMock = null!;
-    private LogMoodCommandHandler _handler = null!;
+    private readonly IEventStore _eventStoreMock;
+    private readonly ICurrentUserProvider _userProviderMock;
+    private readonly LogMoodCommandHandler _handler;
 
-    [SetUp]
-    public void Setup()
+    public LogMoodCommandHandlerTests()
     {
         _eventStoreMock = Substitute.For<IEventStore>();
         _userProviderMock = Substitute.For<ICurrentUserProvider>();
-
         _handler = new LogMoodCommandHandler(_eventStoreMock, _userProviderMock);
     }
 
-    [Test]
+    [Fact]
     public async Task Handle_ShouldSaveEventAndReturnId_WhenCommandIsValid()
     {
         // Arrange
@@ -46,15 +44,15 @@ public class LogMoodCommandHandlerTests
         ));
     }
 
-    [Test]
-    public void Handle_ShouldThrowUnauthorized_WhenUserIsNotFound()
+    [Fact]
+    public async Task Handle_ShouldThrowUnauthorized_WhenUserIsNotFound()
     {
         // Arrange
         var command = new LogMoodCommand(Score: 5, Notes: "Neutral");
         _userProviderMock.UserId.Returns((Guid?)null);
 
         // Act & Assert
-        Assert.ThrowsAsync<UnauthorizedAccessException>(
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
             async () => await _handler.Handle(command, CancellationToken.None)
         );
     }

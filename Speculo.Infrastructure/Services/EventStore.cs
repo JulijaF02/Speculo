@@ -10,11 +10,12 @@ namespace Speculo.Infrastructure.Services;
 public class EventStore(ISpeculoDbContext context, ICurrentUserProvider currentUserProvider) : IEventStore
 {
     private static readonly Dictionary<string, Type> _eventTypeRegistry = new()
-    {
-        {nameof(MoodLoggedEvent), typeof(MoodLoggedEvent)},
-        {nameof(WorkoutLoggedEvent), typeof(WorkoutLoggedEvent)},
-        {nameof(SleepLoggedEvent), typeof(SleepLoggedEvent)}
-    };
+{
+    {nameof(MoodLoggedEvent), typeof(MoodLoggedEvent)},
+    {nameof(WorkoutLoggedEvent), typeof(WorkoutLoggedEvent)},
+    {nameof(SleepLoggedEvent), typeof(SleepLoggedEvent)},
+    {nameof(MoneyLoggedEvent), typeof(MoneyLoggedEvent)}
+};
     public async Task<Guid> SaveAsync<TEvent>(TEvent domainEvent, CancellationToken ct = default)
         where TEvent : IDomainEvent
     {
@@ -47,7 +48,7 @@ public class EventStore(ISpeculoDbContext context, ICurrentUserProvider currentU
 
         foreach (var dbEvent in dbEvents)
         {
-            if (_eventTypeRegistry.TryGetValue(dbEvent.Type, out Type? targetType))
+            if (_eventTypeRegistry.TryGetValue(dbEvent.Type, out var targetType))
             {
                 var domainEvent = (IDomainEvent?)JsonSerializer.Deserialize(dbEvent.Payload, targetType);
 

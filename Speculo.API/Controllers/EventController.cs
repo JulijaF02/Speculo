@@ -2,9 +2,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualBasic;
+using Speculo.Application.Features.Events.Commands.LogMoney;
 using Speculo.Application.Features.Events.Commands.LogMood;
 using Speculo.Application.Features.Events.Commands.LogSleep;
 using Speculo.Application.Features.Events.Commands.LogWorkout;
+using Speculo.Application.Features.Events.Queries.GetRecentMoney;
 using Speculo.Application.Features.Events.Queries.GetRecentMoods;
 using Speculo.Application.Features.Events.Queries.GetRecentSleep;
 using Speculo.Application.Features.Events.Queries.GetRecentWorkouts;
@@ -60,6 +62,22 @@ public class EventController(ISender sender) : ControllerBase
     public async Task<IActionResult> GetRecentSleep()
     {
         var query = new GetRecentSleepQuery();
+        var result = await sender.Send(query);
+        return Ok(result);
+    }
+
+    [HttpPost("money")]
+    public async Task<IActionResult> LogMoney([FromBody] LogMoneyCommand command)
+    {
+        var eventId = await sender.Send(command);
+
+        return Ok(eventId);
+    }
+
+    [HttpGet("recentMoney")]
+    public async Task<IActionResult> GetRecentMoney()
+    {
+        var query = new GetRecentMoneyQuery();
         var result = await sender.Send(query);
         return Ok(result);
     }
