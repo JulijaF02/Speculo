@@ -1,7 +1,7 @@
 namespace Speculo.Application.Features.Events.Queries.GetRecentWorkouts;
 
 public record WorkoutLogDto(
-    Guid id,
+    Guid Id,
     string Type,
     int Minutes,
     int Score,

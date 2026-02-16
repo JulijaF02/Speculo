@@ -1,8 +1,8 @@
 namespace Speculo.Application.Features.Events.Queries.GetRecentMoods;
 
 public record MoodLogDto(
-    Guid id,
-    int score,
+    Guid Id,
+    int Score,
     DateTimeOffset Timestamp
 
 );
