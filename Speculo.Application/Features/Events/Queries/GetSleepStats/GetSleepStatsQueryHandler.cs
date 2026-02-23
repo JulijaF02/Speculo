@@ -10,13 +10,12 @@ public class GetSleepStatsQueryHandler(IEventStore eventStore, ICurrentUserProvi
     public async Task<SleepStatsDto> Handle(GetSleepStatsQuery request, CancellationToken cancellationToken)
     {
         var userId = currentUserProvider.UserId ?? throw new UnauthorizedAccessException();
-        var events = await eventStore.GetEventsAsync(userId, cancellationToken);
-
         var cutoff = DateTimeOffset.UtcNow.AddDays(-request.Days);
+
+        var events = await eventStore.GetEventsAsync(userId, cancellationToken, from: cutoff);
 
         var sleepEvents = events
             .OfType<SleepLoggedEvent>()
-            .Where(e => e.OccurredOn >= cutoff)
             .ToList();
 
         if (sleepEvents.Count == 0)

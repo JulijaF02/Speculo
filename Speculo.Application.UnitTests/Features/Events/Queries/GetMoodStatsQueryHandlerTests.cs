@@ -34,7 +34,7 @@ public class GetMoodStatsQueryHandlerTests
             new MoodLoggedEvent(UserId: userId, Score: 6),
         };
 
-        _eventStoreMock.GetEventsAsync(userId, Arg.Any<CancellationToken>()).Returns(events);
+        _eventStoreMock.GetEventsAsync(userId, Arg.Any<CancellationToken>(), Arg.Any<DateTimeOffset?>()).Returns(events);
 
         // Act
         var result = await _handler.Handle(new GetMoodStatsQuery(Days: 30), CancellationToken.None);

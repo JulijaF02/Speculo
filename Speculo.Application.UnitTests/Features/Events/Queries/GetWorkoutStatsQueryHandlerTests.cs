@@ -34,7 +34,7 @@ public class GetWorkoutStatsQueryHandlerTests
             new WorkoutLoggedEvent(UserId: userId, Type: "Run",  Minutes: 30, Score: 9),
         };
 
-        _eventStoreMock.GetEventsAsync(userId, Arg.Any<CancellationToken>()).Returns(events);
+        _eventStoreMock.GetEventsAsync(userId, Arg.Any<CancellationToken>(), Arg.Any<DateTimeOffset?>()).Returns(events);
 
         // Act
         var result = await _handler.Handle(new GetWorkoutStatsQuery(Days: 30), CancellationToken.None);

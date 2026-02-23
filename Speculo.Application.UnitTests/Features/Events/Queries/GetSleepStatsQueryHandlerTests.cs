@@ -34,7 +34,7 @@ public class GetSleepStatsQueryHandlerTests
             new SleepLoggedEvent(UserId: userId, Hours: 8.0m, Quality: 9),
         };
 
-        _eventStoreMock.GetEventsAsync(userId, Arg.Any<CancellationToken>()).Returns(events);
+        _eventStoreMock.GetEventsAsync(userId, Arg.Any<CancellationToken>(), Arg.Any<DateTimeOffset?>()).Returns(events);
 
         // Act
         var result = await _handler.Handle(new GetSleepStatsQuery(Days: 30), CancellationToken.None);

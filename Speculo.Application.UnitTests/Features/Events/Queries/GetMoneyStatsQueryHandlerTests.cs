@@ -34,7 +34,7 @@ public class GetMoneyStatsQueryHandlerTests
             new MoneyLoggedEvent(UserId: userId, Amount: 200m,  Type: TransactionType.Expense, Category: "Food"),
         };
 
-        _eventStoreMock.GetEventsAsync(userId, Arg.Any<CancellationToken>()).Returns(events);
+        _eventStoreMock.GetEventsAsync(userId, Arg.Any<CancellationToken>(), Arg.Any<DateTimeOffset?>()).Returns(events);
 
         // Act
         var result = await _handler.Handle(new GetMoneyStatsQuery(Days: 30), CancellationToken.None);

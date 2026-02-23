@@ -36,13 +36,14 @@ public class EventStore(ISpeculoDbContext context, ICurrentUserProvider currentU
         return eventId;
     }
 
-    public async Task<IEnumerable<IDomainEvent>> GetEventsAsync(Guid userId, CancellationToken ct = default)
+    public async Task<IEnumerable<IDomainEvent>> GetEventsAsync(Guid userId, CancellationToken ct = default, DateTimeOffset? from = null)
     {
         var dbEvents = await context.Events
-            .Where(e => e.UserId == userId)
-            .OrderBy(e => e.Timestamp)
-            .AsNoTracking()
-            .ToListAsync(ct);
+        .Where(e => e.UserId == userId)
+        .Where(e => from == null || e.Timestamp >= from)
+        .OrderBy(e => e.Timestamp)
+        .AsNoTracking()
+        .ToListAsync(ct);
 
         var domainEvents = new List<IDomainEvent>();
 
