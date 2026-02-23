@@ -10,13 +10,13 @@ public class GetMoodStatsQueryHandler(IEventStore eventStore, ICurrentUserProvid
     public async Task<MoodStatsDto> Handle(GetMoodStatsQuery request, CancellationToken cancellationToken)
     {
         var userId = currentUserProvider.UserId ?? throw new UnauthorizedAccessException();
-        var events = await eventStore.GetEventsAsync(userId, cancellationToken);
-
         var cutoff = DateTimeOffset.UtcNow.AddDays(-request.Days);
+
+        var events = await eventStore.GetEventsAsync(userId, cancellationToken, from: cutoff);
+
 
         var moodEvents = events
             .OfType<MoodLoggedEvent>()
-            .Where(e => e.OccurredOn >= cutoff)
             .ToList();
 
         if (moodEvents.Count == 0)

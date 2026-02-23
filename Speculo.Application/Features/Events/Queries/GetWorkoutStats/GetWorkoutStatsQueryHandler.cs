@@ -10,13 +10,12 @@ public class GetWorkoutStatsQueryHandler(IEventStore eventStore, ICurrentUserPro
     public async Task<WorkoutStatsDto> Handle(GetWorkoutStatsQuery request, CancellationToken cancellationToken)
     {
         var userId = currentUserProvider.UserId ?? throw new UnauthorizedAccessException();
-        var events = await eventStore.GetEventsAsync(userId, cancellationToken);
-
         var cutoff = DateTimeOffset.UtcNow.AddDays(-request.Days);
+
+        var events = await eventStore.GetEventsAsync(userId, cancellationToken, from: cutoff);
 
         var workoutEvents = events
             .OfType<WorkoutLoggedEvent>()
-            .Where(e => e.OccurredOn >= cutoff)
             .ToList();
 
         if (workoutEvents.Count == 0)

@@ -7,5 +7,5 @@ public interface IEventStore
     Task<Guid> SaveAsync<TEvent>(TEvent domainEvent, CancellationToken ct = default)
         where TEvent : IDomainEvent;
 
-    Task<IEnumerable<IDomainEvent>> GetEventsAsync(Guid userId, CancellationToken ct = default);
+    Task<IEnumerable<IDomainEvent>> GetEventsAsync(Guid userId, CancellationToken ct = default, DateTimeOffset? from = null);
 }
