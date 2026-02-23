@@ -11,6 +11,9 @@ using Speculo.Application.Features.Events.Queries.GetRecentMoods;
 using Speculo.Application.Features.Events.Queries.GetRecentSleep;
 using Speculo.Application.Features.Events.Queries.GetRecentWorkouts;
 using Speculo.Application.Features.Events.Queries.GetMoodStats;
+using Speculo.Application.Features.Events.Queries.GetWorkoutStats;
+using Speculo.Application.Features.Events.Queries.GetSleepStats;
+using Speculo.Application.Features.Events.Queries.GetMoneyStats;
 
 
 namespace Speculo.API.Controllers;
@@ -92,7 +95,28 @@ public class EventController(ISender sender) : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("workoutStats")]
+    public async Task<IActionResult> GetWorkoutStats([FromQuery] int days = 30)
+    {
+        var query = new GetWorkoutStatsQuery(days);
+        var result = await sender.Send(query);
+        return Ok(result);
+    }
 
+    [HttpGet("sleepStats")]
+    public async Task<IActionResult> GetSleepStats([FromQuery] int days = 30)
+    {
+        var query = new GetSleepStatsQuery(days);
+        var result = await sender.Send(query);
+        return Ok(result);
+    }
 
+    [HttpGet("moneyStats")]
+    public async Task<IActionResult> GetMoneyStats([FromQuery] int days = 30)
+    {
+        var query = new GetMoneyStatsQuery(days);
+        var result = await sender.Send(query);
+        return Ok(result);
+    }
 }
 
