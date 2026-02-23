@@ -1,4 +1,3 @@
-using System;
 using Speculo.Domain.Common;
 
 namespace Speculo.Domain.Events;

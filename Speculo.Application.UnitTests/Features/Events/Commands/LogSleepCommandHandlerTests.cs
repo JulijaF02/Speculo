@@ -1,57 +1,57 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using NSubstitute;
 using Speculo.Application.Common.Interfaces;
-using Speculo.Application.Features.Events.Commands.LogMood;
+using Speculo.Application.Features.Events.Commands.LogSleep;
 using Speculo.Domain.Events;
 
+namespace Speculo.Application.UnitTests.Features.Events.Commands;
 
-public class LogMoodCommandHandlerTests
+public class LogSleepCommandHandlerTests
 {
     private readonly IEventStore _eventStoreMock;
     private readonly ICurrentUserProvider _userProviderMock;
-    private readonly LogMoodCommandHandler _handler;
+    private readonly LogSleepCommandHandler _handler;
 
-    public LogMoodCommandHandlerTests()
+    public LogSleepCommandHandlerTests()
     {
         _eventStoreMock = Substitute.For<IEventStore>();
         _userProviderMock = Substitute.For<ICurrentUserProvider>();
-        _handler = new LogMoodCommandHandler(_eventStoreMock, _userProviderMock);
-    }
+        _handler = new LogSleepCommandHandler(_eventStoreMock, _userProviderMock);
 
+    }
     [Fact]
     public async Task Handle_ShouldSaveEventAndReturnId_WhenCommandIsValid()
     {
-        // Arrange
-        var command = new LogMoodCommand(Score: 8, Notes: "Feeling great!");
+        //arrange
+        var command = new LogSleepCommand(Hours: 8, Quality: 6);
         var userId = Guid.NewGuid();
         var expectedEventId = Guid.NewGuid();
-
         _userProviderMock.UserId.Returns(userId);
-        _eventStoreMock.SaveAsync(Arg.Any<MoodLoggedEvent>()).Returns(expectedEventId);
-
-        // Act
+        _eventStoreMock.SaveAsync(Arg.Any<SleepLoggedEvent>()).Returns(expectedEventId);
+        //act
         var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
+        //assert
         result.Should().Be(expectedEventId);
-
-        await _eventStoreMock.Received(1).SaveAsync(Arg.Is<MoodLoggedEvent>(e =>
+        await _eventStoreMock.Received(1).SaveAsync(Arg.Is<SleepLoggedEvent>(e =>
             e.UserId == userId &&
-            e.Score == 8 &&
-            e.Notes == "Feeling great!"
+            e.Hours == 8 &&
+            e.Quality == 6
         ));
+
     }
 
     [Fact]
+
     public async Task Handle_ShouldThrowUnauthorized_WhenUserIsNotFound()
     {
-        // Arrange
-        var command = new LogMoodCommand(Score: 5, Notes: "Neutral");
+        //arrange 
+        var command = new LogSleepCommand(Hours: 8, Quality: 6);
         _userProviderMock.UserId.Returns((Guid?)null);
-
-        // Act & Assert
+        //act and assert
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             async () => await _handler.Handle(command, CancellationToken.None)
         );
+
     }
+
 }
