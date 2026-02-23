@@ -1,6 +1,5 @@
 using MediatR;
 using Speculo.Application.Common.Interfaces;
-using Speculo.Application.Features.Events.Commands.LogWorkout;
 using Speculo.Domain.Events;
 
 namespace Speculo.Application.Features.Events.Commands.LogWorkout;
