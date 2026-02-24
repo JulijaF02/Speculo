@@ -4,8 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using Speculo.Application;
 using Speculo.Infrastructure;
 using Speculo.Infrastructure.Authentication;
+using Speculo.API.Middleware;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +41,9 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -79,6 +82,8 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<SpeculoDbContext>();
     dbContext.Database.Migrate();
 }
+
+app.UseExceptionHandler();
 
 app.UseSwagger();
 app.UseSwaggerUI();
