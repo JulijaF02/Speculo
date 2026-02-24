@@ -1,4 +1,7 @@
+using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Speculo.Application.Common.Behaviours;
 
 namespace Speculo.Application;
 
@@ -8,6 +11,12 @@ public static class DependencyInjection
     {
         // Register MediatR for the entire application assembly
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
+
+        // Scan and register all FluentValidation validators in this assembly
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+
+        // Plug ValidationBehaviour into the MediatR pipeline (runs before every handler)
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
 
         return services;
     }
