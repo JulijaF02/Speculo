@@ -6,6 +6,7 @@ using Speculo.Infrastructure;
 using Speculo.Infrastructure.Authentication;
 using Speculo.API.Middleware;
 using Microsoft.EntityFrameworkCore;
+
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,10 @@ builder.Services.AddControllers()
     });
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<SpeculoDbContext>("database");
+
 
 // JWT Authentication Configuration
 var jwtSettings = new JwtSettings();
@@ -99,5 +104,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
