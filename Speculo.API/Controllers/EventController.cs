@@ -14,13 +14,15 @@ using Speculo.Application.Features.Events.Queries.GetMoodStats;
 using Speculo.Application.Features.Events.Queries.GetWorkoutStats;
 using Speculo.Application.Features.Events.Queries.GetSleepStats;
 using Speculo.Application.Features.Events.Queries.GetMoneyStats;
-
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Speculo.API.Controllers;
 
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("standard")]
+
 public class EventController(ISender sender) : ControllerBase
 {
     [HttpPost("mood")]
