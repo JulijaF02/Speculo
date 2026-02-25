@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Speculo.Application.Common.Interfaces;
 using Speculo.Application.Common.Models.Auth;
-
+using Microsoft.AspNetCore.RateLimiting;
 namespace Speculo.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")] 
+[Route("api/[controller]")]
+[EnableRateLimiting("auth")]
+
 public class AuthController : ControllerBase
 {
     private readonly IIdentityService _identityService;
