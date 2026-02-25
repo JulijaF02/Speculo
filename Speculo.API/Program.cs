@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Speculo.Application;
@@ -8,11 +9,9 @@ using Speculo.API.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
-using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Replace default ASP.NET logging with Serilog — reads config from appsettings.json
 builder.Host.UseSerilog((context, config) =>
     config.ReadFrom.Configuration(context.Configuration));
 
@@ -28,7 +27,6 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<SpeculoDbContext>("database");
 
 
-// JWT Authentication Configuration
 var jwtSettings = new JwtSettings();
 builder.Configuration.GetSection("JwtSettings").Bind(jwtSettings);
 
@@ -55,6 +53,25 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddFixedWindowLimiter("auth", o =>
+    {
+        o.Window = TimeSpan.FromMinutes(1);
+        o.PermitLimit = 10;
+        o.QueueLimit = 0;
+    });
+
+    options.AddFixedWindowLimiter("standard", o =>
+    {
+        o.Window = TimeSpan.FromMinutes(1);
+        o.PermitLimit = 60;
+        o.QueueLimit = 0;
+    });
+});
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -87,7 +104,6 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Apply Migrations
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<SpeculoDbContext>();
@@ -95,11 +111,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseExceptionHandler();
-
 app.UseSerilogRequestLogging(); // logs every HTTP request: method, path, status, duration
-
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
