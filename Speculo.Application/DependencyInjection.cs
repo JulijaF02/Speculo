@@ -15,6 +15,8 @@ public static class DependencyInjection
         // Scan and register all FluentValidation validators in this assembly
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehaviour<,>));
+
         // Plug ValidationBehaviour into the MediatR pipeline (runs before every handler)
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
 
