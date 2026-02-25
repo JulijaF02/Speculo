@@ -6,8 +6,13 @@ using Speculo.Infrastructure;
 using Speculo.Infrastructure.Authentication;
 using Speculo.API.Middleware;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Replace default ASP.NET logging with Serilog — reads config from appsettings.json
+builder.Host.UseSerilog((context, config) =>
+    config.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -84,6 +89,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseExceptionHandler();
+
+app.UseSerilogRequestLogging(); // logs every HTTP request: method, path, status, duration
 
 app.UseSwagger();
 app.UseSwaggerUI();
