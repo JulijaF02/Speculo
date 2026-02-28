@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Speculo.Domain\Speculo.Domain.csproj" />
+    <ProjectReference Include="..\Speculo.Contracts\Speculo.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

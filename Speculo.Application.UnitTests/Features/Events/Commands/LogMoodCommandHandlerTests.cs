@@ -2,6 +2,7 @@
 using NSubstitute;
 using Speculo.Application.Common.Interfaces;
 using Speculo.Application.Features.Events.Commands.LogMood;
+using Speculo.Contracts.Events;
 using Speculo.Domain.Events;
 
 
@@ -9,13 +10,15 @@ public class LogMoodCommandHandlerTests
 {
     private readonly IEventStore _eventStoreMock;
     private readonly ICurrentUserProvider _userProviderMock;
+    private readonly IEventBus _eventBusMock;
     private readonly LogMoodCommandHandler _handler;
 
     public LogMoodCommandHandlerTests()
     {
         _eventStoreMock = Substitute.For<IEventStore>();
         _userProviderMock = Substitute.For<ICurrentUserProvider>();
-        _handler = new LogMoodCommandHandler(_eventStoreMock, _userProviderMock);
+        _eventBusMock = Substitute.For<IEventBus>();
+        _handler = new LogMoodCommandHandler(_eventStoreMock, _userProviderMock, _eventBusMock);
     }
 
     [Fact]
@@ -40,6 +43,13 @@ public class LogMoodCommandHandlerTests
             e.Score == 8 &&
             e.Notes == "Feeling great!"
         ));
+
+        // Verify integration event was published to Kafka
+        await _eventBusMock.Received(1).PublishAsync(
+            Arg.Is<MoodLoggedIntegrationEvent>(e =>
+                e.UserId == userId &&
+                e.Score == 8),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -55,3 +65,4 @@ public class LogMoodCommandHandlerTests
         );
     }
 }
+

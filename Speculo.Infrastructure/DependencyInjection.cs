@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Speculo.Application.Common.Interfaces;
 using Speculo.Infrastructure.Services;
 using Speculo.Infrastructure.Authentication;
+using Speculo.Infrastructure.Messaging;
 
 namespace Speculo.Infrastructure;
 
@@ -25,6 +26,10 @@ public static class DependencyInjection
 
         // Event Sourcing
         services.AddScoped<IEventStore, EventStore>();
+
+        // Kafka Event Bus — publishes integration events to Kafka for other services
+        // Singleton because Kafka producers are thread-safe and reuse one TCP connection
+        services.AddSingleton<IEventBus, KafkaEventBus>();
 
         // User Identity Context
         services.AddHttpContextAccessor();

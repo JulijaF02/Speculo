@@ -2,6 +2,7 @@ using FluentAssertions;
 using NSubstitute;
 using Speculo.Application.Common.Interfaces;
 using Speculo.Application.Features.Events.Commands.LogMoney;
+using Speculo.Contracts.Events;
 using Speculo.Domain.Events;
 using Xunit;
 
@@ -11,13 +12,15 @@ public class LogMoneyCommandHandlerTests
 {
     private readonly IEventStore _eventStoreMock;
     private readonly ICurrentUserProvider _currentUserProviderMock;
+    private readonly IEventBus _eventBusMock;
     private readonly LogMoneyCommandHandler _handler;
 
     public LogMoneyCommandHandlerTests()
     {
         _eventStoreMock = Substitute.For<IEventStore>();
         _currentUserProviderMock = Substitute.For<ICurrentUserProvider>();
-        _handler = new LogMoneyCommandHandler(_eventStoreMock, _currentUserProviderMock);
+        _eventBusMock = Substitute.For<IEventBus>();
+        _handler = new LogMoneyCommandHandler(_eventStoreMock, _currentUserProviderMock, _eventBusMock);
     }
 
     [Fact]
@@ -51,6 +54,12 @@ public class LogMoneyCommandHandlerTests
             e.Type == TransactionType.Expense &&
             e.Category == "Food"
         ));
+
+        await _eventBusMock.Received(1).PublishAsync(
+            Arg.Is<MoneyLoggedIntegrationEvent>(e =>
+                e.UserId == userId &&
+                e.Amount == -50.00m),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -100,7 +109,12 @@ public class LogMoneyCommandHandlerTests
           e.Category == "Bonus"
       ));
 
-
+        await _eventBusMock.Received(1).PublishAsync(
+            Arg.Is<MoneyLoggedIntegrationEvent>(e =>
+                e.UserId == userId &&
+                e.Amount == 50.00m),
+            Arg.Any<CancellationToken>());
     }
 
 }
+
