@@ -1,33 +1,201 @@
 services:
-  api:
+
+  # ── Application Services ───────────────────────────────────────
+
+  tracking-api:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: speculo-tracking-api
     ports:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Database=speculo;Username=postgres;Password=postgres
+      - ConnectionStrings__DefaultConnection=Host=tracking-db;Port=5432;Database=speculo;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET:-super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars}
+      - JwtSettings__Issuer=${JWT_ISSUER:-Speculo}
+      - JwtSettings__Audience=${JWT_AUDIENCE:-SpeculoUsers}
+      - Kafka__BootstrapServers=kafka:29092
     depends_on:
-      db:
+      tracking-db:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - speculo-network
 
-  db:
-    image: postgres:17-alpine
-    container_name: speculo-db
+  identity:
+    build:
+      context: .
+      dockerfile: Dockerfile.identity
+    container_name: speculo-identity
+    ports:
+      - "5001:5001"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__IdentityConnection=Host=identity-db;Port=5432;Database=speculo_identity;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - JwtSettings__Secret=${JWT_SECRET:-super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars}
+      - JwtSettings__Issuer=${JWT_ISSUER:-Speculo}
+      - JwtSettings__Audience=${JWT_AUDIENCE:-SpeculoUsers}
+      - Kafka__BootstrapServers=kafka:29092
+      - Frontend__Url=${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      identity-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - speculo-network
+
+  analytics:
+    build:
+      context: .
+      dockerfile: Dockerfile.analytics
+    container_name: speculo-analytics
+    ports:
+      - "5002:5002"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MongoDB__ConnectionString=mongodb://mongo:27017
+      - MongoDB__DatabaseName=speculo_analytics
+      - Redis__ConnectionString=redis:6379
+      - Kafka__BootstrapServers=kafka:29092
+      - Jwt__Secret=${JWT_SECRET:-super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars}
+      - Jwt__Issuer=${JWT_ISSUER:-Speculo}
+      - Jwt__Audience=${JWT_AUDIENCE:-SpeculoUsers}
+      - Frontend__Url=${FRONTEND_URL:-http://localhost:3000}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - speculo-network
+
+  # ── Databases ──────────────────────────────────────────────────
+
+  tracking-db:
+    image: postgres:17-alpine
+    container_name: speculo-tracking-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: speculo
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - tracking_db_data:/var/lib/postgresql/data
+    networks:
+      - speculo-network
+
+  identity-db:
+    image: postgres:17-alpine
+    container_name: speculo-identity-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: speculo_identity
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - identity_db_data:/var/lib/postgresql/data
+    networks:
+      - speculo-network
+
+  mongo:
+    image: mongo:7
+    container_name: speculo-mongo
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok", "--quiet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - speculo-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: speculo-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+    networks:
+      - speculo-network
+
+  # ── Messaging ──────────────────────────────────────────────────
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: speculo-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    networks:
+      - speculo-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: speculo-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - speculo-network
 
 volumes:
-  postgres_data:
+  tracking_db_data:
+  identity_db_data:
+  mongo_data:
+  redis_data:
+  zookeeper_data:
+  kafka_data:
+
+networks:
+  speculo-network:
+    driver: bridge

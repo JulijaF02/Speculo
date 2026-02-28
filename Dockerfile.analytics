@@ -1,0 +1,22 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY ["Speculo.Analytics/Speculo.Analytics.csproj", "Speculo.Analytics/"]
+COPY ["Speculo.Contracts/Speculo.Contracts.csproj", "Speculo.Contracts/"]
+
+RUN dotnet restore "Speculo.Analytics/Speculo.Analytics.csproj"
+
+COPY . .
+WORKDIR "/src/Speculo.Analytics"
+RUN dotnet publish "Speculo.Analytics.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
+COPY --from=build /app/publish .
+
+EXPOSE 5002
+ENTRYPOINT ["dotnet", "Speculo.Analytics.dll"]
