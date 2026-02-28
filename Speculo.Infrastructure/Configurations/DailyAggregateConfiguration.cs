@@ -8,10 +8,10 @@ public class DailyAggregateConfiguration : IEntityTypeConfiguration<DailyAggrega
 {
     public void Configure(EntityTypeBuilder<DailyAggregate> builder)
     {
-        // Kombinovani ključ: ne možemo imati dva summary-ja za istog korisnika na isti dan
+        // Composite key: one summary per user per day
         builder.HasKey(a => new { a.UserId, a.Date });
 
-        // Osiguravamo preciznost za novac
+        // Decimal precision for monetary values
         builder.Property(a => a.TotalSpent).HasPrecision(18, 2);
     }
 }
