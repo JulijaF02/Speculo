@@ -110,8 +110,9 @@ using (var scope = app.Services.CreateScope())
     dbContext.Database.Migrate();
 }
 
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseExceptionHandler();
-app.UseSerilogRequestLogging(); // logs every HTTP request: method, path, status, duration
+app.UseSerilogRequestLogging();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseRateLimiter();
