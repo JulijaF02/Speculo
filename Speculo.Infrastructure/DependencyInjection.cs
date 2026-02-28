@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Speculo.Application.Common.Interfaces;
-using Speculo.Infrastructure.Services;
 using Speculo.Infrastructure.Authentication;
 using Speculo.Infrastructure.Messaging;
+using Speculo.Infrastructure.Services;
 
 namespace Speculo.Infrastructure;
 
@@ -19,10 +19,8 @@ public static class DependencyInjection
         // Map interface to implementation for Database Context
         services.AddScoped<ISpeculoDbContext>(provider => provider.GetRequiredService<SpeculoDbContext>());
 
-        // Identity Services
-        services.AddScoped<IIdentityService, IdentityService>();
+        // JWT Settings (still needed for token validation)
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         // Event Sourcing
         services.AddScoped<IEventStore, EventStore>();
