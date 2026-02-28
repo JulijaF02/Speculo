@@ -4,12 +4,18 @@ using System.Security.Claims;
 
 namespace Speculo.Identity.Controllers;
 
+/// <summary>
+/// User account endpoints — returns profile info from the JWT token.
+/// </summary>
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
 public class AccountController : ControllerBase
 {
+    /// <summary>Get the current authenticated user's profile.</summary>
     [HttpGet("me")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetMe()
     {
         var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
