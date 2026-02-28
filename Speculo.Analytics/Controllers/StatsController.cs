@@ -13,6 +13,7 @@ namespace Speculo.Analytics.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
 public class StatsController : ControllerBase
 {
     private readonly ProjectionService _projectionService;
@@ -34,6 +35,7 @@ public class StatsController : ControllerBase
     /// Uses cache-aside pattern: Redis → MongoDB fallback, with event-driven invalidation.
     /// </summary>
     [HttpGet("dashboard")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDashboard()
     {
         var userId = GetUserId();
