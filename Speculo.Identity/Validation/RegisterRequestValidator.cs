@@ -1,39 +1,33 @@
-using System.ComponentModel.DataAnnotations;
+using FluentValidation;
+using Speculo.Identity.Models;
 
 namespace Speculo.Identity.Validation;
 
-public static class AuthValidation
+public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
 {
-    public static List<string> ValidateRegister(string? email, string? password, string? fullName)
+    public RegisterRequestValidator()
     {
-        var errors = new List<string>();
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email is required.")
+            .EmailAddress().WithMessage("Invalid email format.");
 
-        if (string.IsNullOrWhiteSpace(email))
-            errors.Add("Email is required.");
-        else if (!new EmailAddressAttribute().IsValid(email))
-            errors.Add("Invalid email format.");
+        RuleFor(x => x.Password)
+            .NotEmpty().WithMessage("Password is required.")
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters long.");
 
-        if (string.IsNullOrWhiteSpace(password))
-            errors.Add("Password is required.");
-        else if (password.Length < 8)
-            errors.Add("Password must be at least 8 characters long.");
-
-        if (string.IsNullOrWhiteSpace(fullName))
-            errors.Add("Full name is required.");
-
-        return errors;
+        RuleFor(x => x.FullName)
+            .NotEmpty().WithMessage("Full name is required.");
     }
+}
 
-    public static List<string> ValidateLogin(string? email, string? password)
+public class LoginRequestValidator : AbstractValidator<LoginRequest>
+{
+    public LoginRequestValidator()
     {
-        var errors = new List<string>();
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email is required.");
 
-        if (string.IsNullOrWhiteSpace(email))
-            errors.Add("Email is required.");
-
-        if (string.IsNullOrWhiteSpace(password))
-            errors.Add("Password is required.");
-
-        return errors;
+        RuleFor(x => x.Password)
+            .NotEmpty().WithMessage("Password is required.");
     }
 }

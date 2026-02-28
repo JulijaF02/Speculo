@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using FluentValidation;
 using Speculo.Identity.Data;
 using Speculo.Identity.Middleware;
 using Speculo.Identity.Services;
@@ -73,6 +74,9 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
+
+// FluentValidation — same pattern as Tracking API
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddControllers();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
