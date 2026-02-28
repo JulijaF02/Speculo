@@ -1,0 +1,22 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY ["Speculo.Identity/Speculo.Identity.csproj", "Speculo.Identity/"]
+COPY ["Speculo.Contracts/Speculo.Contracts.csproj", "Speculo.Contracts/"]
+
+RUN dotnet restore "Speculo.Identity/Speculo.Identity.csproj"
+
+COPY . .
+WORKDIR "/src/Speculo.Identity"
+RUN dotnet publish "Speculo.Identity.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
+COPY --from=build /app/publish .
+
+EXPOSE 5001
+ENTRYPOINT ["dotnet", "Speculo.Identity.dll"]
