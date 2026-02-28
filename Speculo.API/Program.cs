@@ -30,6 +30,9 @@ builder.Services.AddHealthChecks()
 var jwtSettings = new JwtSettings();
 builder.Configuration.GetSection("JwtSettings").Bind(jwtSettings);
 
+if (string.IsNullOrWhiteSpace(jwtSettings.Secret) || jwtSettings.Secret == "override-this-via-env-vars-or-user-secrets")
+    throw new InvalidOperationException("JWT secret not configured. Set JwtSettings:Secret via environment variables or user secrets.");
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -72,6 +75,18 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+
+// CORS — allow frontend to call tracking endpoints
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                builder.Configuration["Frontend:Url"] ?? "http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -116,6 +131,7 @@ app.UseSerilogRequestLogging();
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseRateLimiter();
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
