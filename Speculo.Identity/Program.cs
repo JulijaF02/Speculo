@@ -1,21 +1,20 @@
 using Confluent.Kafka;
 using Microsoft.EntityFrameworkCore;
 using Speculo.Identity.Data;
+using Speculo.Identity.Middleware;
 using Speculo.Identity.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- Database ---
-// Identity Service has its OWN database — separate from the Tracking Service
+// Database — Identity Service has its own database
 builder.Services.AddDbContext<IdentityDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("IdentityConnection")));
 
-// --- Services ---
+// Services
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<JwtTokenService>();
 
-// --- Kafka Producer ---
-// Used to publish UserRegisteredEvent when a new user signs up
+// Kafka producer — publishes UserRegisteredEvent on signup
 builder.Services.AddSingleton<IProducer<string, string>>(sp =>
 {
     var config = new ProducerConfig
@@ -27,8 +26,7 @@ builder.Services.AddSingleton<IProducer<string, string>>(sp =>
     return new ProducerBuilder<string, string>(config).Build();
 });
 
-// --- CORS ---
-// Allow the React frontend to call this service
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -41,18 +39,28 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Apply pending migrations on startup (development convenience)
+// Apply pending migrations on startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
     db.Database.Migrate();
 }
 
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseExceptionHandler();
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseCors("AllowFrontend");
 app.MapControllers();
 
-// Identity Service runs on port 5001 (Tracking Service runs on 5000)
 app.Run();
+

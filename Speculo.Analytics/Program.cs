@@ -1,8 +1,8 @@
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Serilog;
+using Speculo.Analytics.Middleware;
 using Speculo.Analytics.Services;
 using StackExchange.Redis;
 
@@ -36,7 +36,8 @@ builder.Services.AddHostedService<KafkaConsumerService>();
 
 // ─── JWT Authentication ────────────────────────────────
 // Same JWT settings as other services — tokens issued by Identity Service work here too.
-var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "super-secret-key-for-development-only";
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("JWT secret not configured. Set Jwt:Secret in appsettings or environment variables.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -49,7 +50,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "Speculo.Identity",
             ValidAudience = builder.Configuration["Jwt:Audience"] ?? "Speculo",
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSecret))
+                System.Text.Encoding.UTF8.GetBytes(jwtSecret))
         };
     });
 
@@ -72,9 +73,16 @@ builder.Services.AddCors(options =>
 // ─── Swagger ───────────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
+// Create MongoDB indexes on startup
+await Speculo.Analytics.Configuration.MongoDbIndexes.EnsureIndexesAsync(mongoDatabase);
+
+app.UseMiddleware<SecurityHeadersMiddleware>();
+app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseSwagger();
 app.UseSwaggerUI();
