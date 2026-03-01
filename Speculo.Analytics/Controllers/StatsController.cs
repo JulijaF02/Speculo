@@ -59,18 +59,42 @@ public class StatsController : ControllerBase
         var dashboard = await _projectionService.GetDashboardAsync(userId.Value);
         if (dashboard == null)
         {
-            return Ok(new
-            {
-                message = "No data yet. Start logging your mood, sleep, money, or workouts!",
-                userId = userId
-            });
+            dashboard = new Speculo.Analytics.Models.DashboardProjection();
         }
 
+        var dto = new
+        {
+            mood = new
+            {
+                totalEntries = dashboard.TotalMoodEntries,
+                averageScore = dashboard.AverageMoodScore,
+                latestScore = dashboard.LatestMoodScore
+            },
+            sleep = new
+            {
+                totalEntries = dashboard.TotalSleepEntries,
+                averageHours = dashboard.AverageSleepHours,
+                averageQuality = dashboard.AverageSleepQuality
+            },
+            money = new
+            {
+                totalIncome = dashboard.TotalIncome,
+                totalExpenses = dashboard.TotalExpenses,
+                totalTransactions = dashboard.TotalTransactions
+            },
+            workouts = new
+            {
+                totalWorkouts = dashboard.TotalWorkouts,
+                totalMinutes = dashboard.TotalWorkoutMinutes,
+                averageScore = dashboard.AverageWorkoutScore
+            }
+        };
+
         // Cache with 5-minute TTL (safety net, usually invalidated sooner by events)
-        var json = JsonSerializer.Serialize(dashboard);
+        var json = JsonSerializer.Serialize(dto);
         await db.StringSetAsync(cacheKey, json, TimeSpan.FromMinutes(5));
 
-        return Ok(dashboard);
+        return Ok(dto);
     }
 
     /// <summary>
