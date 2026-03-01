@@ -10,17 +10,8 @@ public static class MongoDbIndexes
         var projections = database.GetCollection<DashboardProjection>("dashboard_projections");
         var processedEvents = database.GetCollection<ProcessedEvent>("processed_events");
 
-        // Index on UserId for fast dashboard lookups
-        await projections.Indexes.CreateOneAsync(
-            new CreateIndexModel<DashboardProjection>(
-                Builders<DashboardProjection>.IndexKeys.Ascending(p => p.UserId),
-                new CreateIndexOptions { Unique = true }));
+        // UserId is already the _id field (BsonId), so its unique by default — no extra index needed
 
-        // Index on EventId for fast idempotency checks
-        await processedEvents.Indexes.CreateOneAsync(
-            new CreateIndexModel<ProcessedEvent>(
-                Builders<ProcessedEvent>.IndexKeys.Ascending(e => e.EventId),
-                new CreateIndexOptions { Unique = true }));
 
         // TTL index to auto-expire old processed events after 7 days
         await processedEvents.Indexes.CreateOneAsync(
