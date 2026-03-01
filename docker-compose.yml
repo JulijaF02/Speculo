@@ -1,5 +1,22 @@
 services:
 
+  # ── Frontend ──────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./speculo-client
+      dockerfile: Dockerfile
+    container_name: speculo-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - tracking-api
+      - identity
+      - analytics
+    restart: unless-stopped
+    networks:
+      - speculo-network
+
   # ── Application Services ───────────────────────────────────────
 
   tracking-api:
