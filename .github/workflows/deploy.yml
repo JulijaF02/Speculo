@@ -1,0 +1,75 @@
+name: Deploy to AKS
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  ACR_NAME: speculoacr2025
+  ACR_LOGIN_SERVER: speculoacr2025.azurecr.io
+  AKS_CLUSTER: speculo-cluster
+  AKS_RESOURCE_GROUP: speculo-rg
+  NAMESPACE: speculo
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    # Authenticate to Azure
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Login to ACR
+    - name: Login to ACR
+      run: az acr login --name ${{ env.ACR_NAME }}
+
+    # Build and push all Docker images
+    - name: Build and push Tracking API
+      run: |
+        docker build -t ${{ env.ACR_LOGIN_SERVER }}/speculo-tracking:${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/speculo-tracking:latest -f Dockerfile .
+        docker push ${{ env.ACR_LOGIN_SERVER }}/speculo-tracking --all-tags
+
+    - name: Build and push Identity API
+      run: |
+        docker build -t ${{ env.ACR_LOGIN_SERVER }}/speculo-identity:${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/speculo-identity:latest -f Dockerfile.identity .
+        docker push ${{ env.ACR_LOGIN_SERVER }}/speculo-identity --all-tags
+
+    - name: Build and push Analytics API
+      run: |
+        docker build -t ${{ env.ACR_LOGIN_SERVER }}/speculo-analytics:${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/speculo-analytics:latest -f Dockerfile.analytics .
+        docker push ${{ env.ACR_LOGIN_SERVER }}/speculo-analytics --all-tags
+
+    - name: Build and push Frontend
+      run: |
+        docker build -t ${{ env.ACR_LOGIN_SERVER }}/speculo-frontend:${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/speculo-frontend:latest -f speculo-client/Dockerfile speculo-client/
+        docker push ${{ env.ACR_LOGIN_SERVER }}/speculo-frontend --all-tags
+
+    # Connect to AKS
+    - name: Set AKS context
+      uses: azure/aks-set-context@v4
+      with:
+        resource-group: ${{ env.AKS_RESOURCE_GROUP }}
+        cluster-name: ${{ env.AKS_CLUSTER }}
+
+    # Deploy to AKS
+    - name: Deploy infrastructure
+      run: kubectl apply -f k8s/stateful-services.yaml
+
+    - name: Deploy applications
+      run: kubectl apply -f k8s/apps.yaml
+
+    # Restart deployments to pull latest images
+    - name: Rollout restart
+      run: |
+        kubectl rollout restart deployment/tracking-api -n ${{ env.NAMESPACE }}
+        kubectl rollout restart deployment/identity -n ${{ env.NAMESPACE }}
+        kubectl rollout restart deployment/analytics -n ${{ env.NAMESPACE }}
+        kubectl rollout restart deployment/frontend -n ${{ env.NAMESPACE }}
+
+    - name: Wait for rollout
+      run: |
+        kubectl rollout status deployment/frontend -n ${{ env.NAMESPACE }} --timeout=120s
