@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: speculo
+---
+# ── Identity API ──────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity
+  namespace: speculo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: identity
+  template:
+    metadata:
+      labels:
+        app: identity
+    spec:
+      containers:
+      - name: identity
+        image: speculoacr2025.azurecr.io/speculo-identity:latest
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Development"
+        - name: ConnectionStrings__IdentityConnection
+          value: "Host=identity-db;Port=5432;Database=speculo_identity;Username=postgres;Password=postgres"
+        - name: JwtSettings__Secret
+          value: "super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars"
+        - name: JwtSettings__Issuer
+          value: "Speculo"
+        - name: JwtSettings__Audience
+          value: "SpeculoUsers"
+        - name: Kafka__BootstrapServers
+          value: "kafka:29092"
+        - name: Frontend__Url
+          value: "http://localhost"
+        ports:
+        - containerPort: 5001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity
+  namespace: speculo
+spec:
+  selector:
+    app: identity
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+
+---
+# ── Tracking API ──────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-api
+  namespace: speculo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tracking-api
+  template:
+    metadata:
+      labels:
+        app: tracking-api
+    spec:
+      containers:
+      - name: tracking-api
+        image: speculoacr2025.azurecr.io/speculo-tracking:latest
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Development"
+        - name: ConnectionStrings__DefaultConnection
+          value: "Host=tracking-db;Port=5432;Database=speculo;Username=postgres;Password=postgres"
+        - name: JwtSettings__Secret
+          value: "super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars"
+        - name: JwtSettings__Issuer
+          value: "Speculo"
+        - name: JwtSettings__Audience
+          value: "SpeculoUsers"
+        - name: Kafka__BootstrapServers
+          value: "kafka:29092"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracking-api
+  namespace: speculo
+spec:
+  selector:
+    app: tracking-api
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 8080
+
+---
+# ── Analytics API ─────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics
+  namespace: speculo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics
+  template:
+    metadata:
+      labels:
+        app: analytics
+    spec:
+      containers:
+      - name: analytics
+        image: speculoacr2025.azurecr.io/speculo-analytics:latest
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Development"
+        - name: MongoDB__ConnectionString
+          value: "mongodb://mongo:27017"
+        - name: MongoDB__DatabaseName
+          value: "speculo_analytics"
+        - name: Redis__ConnectionString
+          value: "redis:6379"
+        - name: Kafka__BootstrapServers
+          value: "kafka:29092"
+        - name: Jwt__Secret
+          value: "super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars"
+        - name: Jwt__Issuer
+          value: "Speculo"
+        - name: Jwt__Audience
+          value: "SpeculoUsers"
+        - name: Frontend__Url
+          value: "http://localhost"
+        ports:
+        - containerPort: 5002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics
+  namespace: speculo
+spec:
+  selector:
+    app: analytics
+  ports:
+    - protocol: TCP
+      port: 5002
+      targetPort: 5002
+
+---
+# ── Frontend (React) ────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: speculo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: speculoacr2025.azurecr.io/speculo-frontend:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: speculo
+spec:
+  type: LoadBalancer # This exposes the frontend to the public internet!
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
