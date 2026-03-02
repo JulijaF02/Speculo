@@ -1,5 +1,7 @@
 # Speculo
 
+**Live Link**: [http://speculo-app.eastus.cloudapp.azure.com](http://speculo-app.eastus.cloudapp.azure.com)
+
 Speculo is a workout tracking application built on a distributed microservices architecture. It demonstrates scalable system design utilizing event-driven communication, the CQRS pattern, and containerized deployment.
 
 ## Architecture
