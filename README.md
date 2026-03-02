@@ -1,37 +1,125 @@
 # Speculo
 
-**Live Link**: [http://speculo-app.eastus.cloudapp.azure.com](http://speculo-app.eastus.cloudapp.azure.com)
+> A distributed lifestyle tracking platform built with .NET microservices, deployed on Azure Kubernetes Service.
 
-Speculo is a workout tracking application built on a distributed microservices architecture. It demonstrates scalable system design utilizing event-driven communication, the CQRS pattern, and containerized deployment.
+**Live**: [http://speculo-app.eastus.cloudapp.azure.com](http://speculo-app.eastus.cloudapp.azure.com)
+
+---
+
+## What It Does
+
+Speculo gives users a single dashboard to track and reflect on four pillars of daily life:
+
+- **Mood** — Log emotional state on a 1-10 scale with notes
+- **Sleep** — Record hours slept and sleep quality
+- **Workouts** — Track exercise type, duration, and intensity
+- **Finances** — Log income and expenses by category
+
+Events flow through an event-driven pipeline and are projected into real-time analytics on the dashboard.
 
 ## Architecture
 
-The system is divided into three core microservices, communicating asynchronously via an event bus.
+```
+                    ┌─────────────┐
+                    │   React UI  │
+                    │   (Nginx)   │
+                    └──────┬──────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+      ┌───────▼──┐  ┌──────▼───┐  ┌────▼──────┐
+      │ Identity │  │ Tracking │  │ Analytics │
+      │  Service │  │  Service │  │  Service  │
+      │ (Auth)   │  │ (Write)  │  │  (Read)   │
+      └───┬──────┘  └──┬───┬──┘  └──┬────┬───┘
+          │             │   │        │    │
+      ┌───▼───┐   ┌────▼┐  │   ┌────▼┐ ┌─▼───┐
+      │Postgres│   │Postgres  │MongoDB│ │Redis│
+      └───────┘   └─────┘  │   └─────┘ └─────┘
+                            │
+                       ┌────▼────┐
+                       │  Kafka  │
+                       └────┬────┘
+                            │
+                       ┌────▼──────┐
+                       │ Analytics │
+                       │ Consumer  │
+                       └───────────┘
+```
 
-*   **Identity Service**: Manages user authentication and authorization. Issues JWT tokens and stores credentials securely in PostgreSQL.
-*   **Tracking Service**: Handles the core domain logic for logging and managing workouts. It serves as the authoritative source for workout data (the command side of CQRS), persisting state to PostgreSQL and publishing domain events to the messaging broker.
-*   **Analytics Service**: Consumes events from the messaging broker to generate materialized views of user statistics. It serves as the read-optimized layer (the query side of CQRS), storing denormalized data in MongoDB. It utilizes Redis for caching frequently accessed dashboard queries with event-driven invalidation.
+### Services
 
-## Technical Stack
+| Service | Responsibility | Database | Port |
+|---------|---------------|----------|------|
+| **Identity** | Registration, login, JWT auth (BCrypt hashing) | PostgreSQL | 5001 |
+| **Tracking** | Event ingestion, validation, command handling | PostgreSQL | 5000 |
+| **Analytics** | Read projections, dashboard queries, caching | MongoDB + Redis | 5002 |
 
-*   **Backend**: .NET 8 (C#), ASP.NET Core Web API
-*   **Frontend**: React (Vite), Nginx
-*   **Messaging**: Apache Kafka
-*   **Databases**: PostgreSQL (Relational), MongoDB (NoSQL)
-*   **Caching**: Redis
-*   **Infrastructure**: Docker, Docker Compose, Kubernetes, Azure Kubernetes Service (AKS)
+### Key Patterns
 
-## Local Development
+- **CQRS** — Commands go to Tracking (PostgreSQL), queries served by Analytics (MongoDB). Separate write and read models optimized for their workloads.
+- **Event-Driven Architecture** — Tracking publishes domain events to Kafka. Analytics consumes them asynchronously to build materialized views. Services are fully decoupled.
+- **Event-Driven Cache Invalidation** — Redis cache is invalidated when new events are consumed, ensuring dashboard data is fresh without polling.
+- **API Gateway** — Nginx reverse proxy in the frontend container routes `/api/identity/`, `/api/tracking/`, `/api/analytics/` to backend services. Single entry point for the client.
 
-The project includes a Docker Compose configuration to easily stand up the entire local environment, including all necessary databases, caching layers, and the Kafka broker.
+## Tech Stack
 
-1. Ensure Docker Desktop is running.
-2. From the project root directory, build and start the infrastructure and services:
-   ```bash
-   docker compose up -d --build
-   ```
-3. The frontend application will be accessible at `http://localhost:3000`. API requests are routed through the Nginx reverse proxy.
+| Layer | Technologies |
+|-------|-------------|
+| Backend | .NET 9, ASP.NET Core, Entity Framework Core, MediatR, FluentValidation |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS |
+| Messaging | Apache Kafka, ZooKeeper |
+| Databases | PostgreSQL 17, MongoDB 7 |
+| Caching | Redis 7 |
+| Infrastructure | Docker, Kubernetes (AKS), Azure Container Registry, Nginx |
+| CI | GitHub Actions (build + test on every PR) |
+
+## Project Structure
+
+```
+├── Speculo.API/                    # Tracking Service (commands + events)
+├── Speculo.Identity/               # Identity Service (auth + JWT)
+├── Speculo.Analytics/              # Analytics Service (projections + queries)
+├── Speculo.Application/            # Application layer (CQRS handlers, MediatR)
+├── Speculo.Domain/                 # Domain entities and interfaces
+├── Speculo.Infrastructure/         # EF Core, repositories, Kafka producer
+├── Speculo.Contracts/              # Shared DTOs and event contracts
+├── Speculo.Application.UnitTests/  # Unit tests (xUnit)
+├── speculo-client/                 # React frontend
+├── k8s/                            # Kubernetes manifests
+├── docker-compose.yml              # Local development orchestration
+├── Dockerfile                      # Tracking API image
+├── Dockerfile.identity             # Identity API image
+└── Dockerfile.analytics            # Analytics API image
+```
+
+## Getting Started
+
+### Prerequisites
+- Docker Desktop
+
+### Run Locally
+```bash
+docker compose up -d --build
+```
+
+Open [http://localhost:3000](http://localhost:3000) — register an account, log some events, and check the dashboard.
+
+### Run Tests
+```bash
+dotnet test
+```
 
 ## Deployment
 
-The application is containerized and configured for deployment to Kubernetes. The necessary manifests for Deployments, Services, and LoadBalancers are located in the `/k8s` directory. The production setup involves pushing images to a container registry (e.g., Azure Container Registry) and applying the manifests to a cluster (e.g., Azure Kubernetes Service).
+Production runs on **Azure Kubernetes Service (AKS)** with images stored in **Azure Container Registry**.
+
+```bash
+# Apply infrastructure (databases, Kafka, Redis)
+kubectl apply -f k8s/stateful-services.yaml
+
+# Deploy application services + frontend
+kubectl apply -f k8s/apps.yaml
+```
+
+Kubernetes manifests are in `/k8s`. CI runs automatically via GitHub Actions on every push and PR to `main`.
