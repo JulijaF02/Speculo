@@ -43,12 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const login = async (data: LoginRequest) => {
-    const res = await identityApi.post('/api/auth/login', data);
+    const res = await identityApi.post('api/auth/login', data);
     setToken(res.data.token);
   };
 
   const register = async (data: RegisterRequest) => {
-    const res = await identityApi.post('/api/auth/register', data);
+    const res = await identityApi.post('api/auth/register', data);
     setToken(res.data.token);
   };
 

@@ -1,15 +1,15 @@
 import axios from 'axios';
 
 const identityApi = axios.create({
-  baseURL: import.meta.env.VITE_IDENTITY_API_URL || 'http://localhost:5001',
+  baseURL: import.meta.env.VITE_IDENTITY_API_URL || '/api/identity',
 });
 
 const trackingApi = axios.create({
-  baseURL: import.meta.env.VITE_TRACKING_API_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_TRACKING_API_URL || '/api/tracking',
 });
 
 const analyticsApi = axios.create({
-  baseURL: import.meta.env.VITE_ANALYTICS_API_URL || 'http://localhost:5002',
+  baseURL: import.meta.env.VITE_ANALYTICS_API_URL || '/api/analytics',
 });
 
 const addAuthInterceptor = (instance: ReturnType<typeof axios.create>) => {

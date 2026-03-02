@@ -12,7 +12,7 @@ export default function DashboardPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await analyticsApi.get<DashboardProjection>('/api/stats/dashboard');
+      const res = await analyticsApi.get<DashboardProjection>('api/stats/dashboard');
       setData(res.data);
     } catch {
       setError('Failed to load dashboard data');
