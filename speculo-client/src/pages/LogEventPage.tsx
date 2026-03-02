@@ -86,7 +86,7 @@ function MoodForm({ onSubmit, loading }: FormProps) {
   const [notes, setNotes] = useState('');
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit('/api/event/mood', { score, notes: notes || undefined }); }} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit('api/event/mood', { score, notes: notes || undefined }); }} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-zinc-300 mb-1.5">
           Mood Score: <span className="text-white font-bold">{score}/10</span>
@@ -115,7 +115,7 @@ function SleepForm({ onSubmit, loading }: FormProps) {
   const [notes, setNotes] = useState('');
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit('/api/event/sleep', { hours, quality, notes: notes || undefined }); }} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit('api/event/sleep', { hours, quality, notes: notes || undefined }); }} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-zinc-300 mb-1.5">Hours Slept</label>
         <input type="number" min={0} max={24} step={0.5} value={hours} onChange={(e) => setHours(Number(e.target.value))}
@@ -147,7 +147,7 @@ function WorkoutForm({ onSubmit, loading }: FormProps) {
   const [notes, setNotes] = useState('');
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit('/api/event/workout', { type, minutes, score, notes: notes || undefined }); }} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit('api/event/workout', { type, minutes, score, notes: notes || undefined }); }} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-zinc-300 mb-1.5">Workout Type</label>
         <input type="text" value={type} onChange={(e) => setType(e.target.value)} required maxLength={50}
@@ -186,7 +186,7 @@ function MoneyForm({ onSubmit, loading }: FormProps) {
   const [notes, setNotes] = useState('');
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit('/api/event/money', { amount: Number(amount), type: txType, category, merchant: merchant || undefined, notes: notes || undefined }); }} className="space-y-4">
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit('api/event/money', { amount: Number(amount), type: txType, category, merchant: merchant || undefined, notes: notes || undefined }); }} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-zinc-300 mb-1.5">Amount</label>
         <input type="number" min={0.01} step={0.01} value={amount} onChange={(e) => setAmount(e.target.value ? Number(e.target.value) : '')} required
