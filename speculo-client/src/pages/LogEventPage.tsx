@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { AxiosError } from 'axios';
 import { trackingApi } from '../api/client';
 
 type Tab = 'mood' | 'sleep' | 'workout' | 'money';
@@ -8,6 +9,7 @@ export default function LogEventPage() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'mood', label: 'Mood' },
@@ -17,14 +19,17 @@ export default function LogEventPage() {
   ];
 
   const handleSubmit = async (endpoint: string, data: Record<string, unknown>) => {
+    if (submitting.current) return;
+    submitting.current = true;
     setError('');
     setSuccess('');
     setLoading(true);
     try {
       await trackingApi.post(endpoint, data);
       setSuccess('Event logged successfully!');
-    } catch (err: any) {
-      const resp = err.response?.data;
+    } catch (err: unknown) {
+      const axiosErr = err as AxiosError<{ errors?: Record<string, string[]>; detail?: string; title?: string }>;
+      const resp = axiosErr.response?.data;
       if (resp?.errors) {
         setError(Object.values(resp.errors).flat().join('. '));
       } else {
@@ -32,6 +37,7 @@ export default function LogEventPage() {
       }
     } finally {
       setLoading(false);
+      submitting.current = false;
     }
   };
 

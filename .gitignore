@@ -425,3 +425,6 @@ FodyWeavers.xsd
 
 # Claude Code worktrees
 .claude/
+
+# K8s secrets (never commit real values)
+k8s/secrets.yaml

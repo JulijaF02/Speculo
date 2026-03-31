@@ -71,7 +71,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 builder.Configuration["Frontend:Url"] ?? "http://localhost:3000")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .WithMethods("GET", "POST");
     });
 });
 
@@ -89,11 +89,25 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Apply pending migrations on startup
+// Apply pending migrations on startup and seed guest user
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
     db.Database.Migrate();
+
+    // Seed guest demo account so "Try Demo as Guest" works
+    if (!db.Users.Any(u => u.Email == "guest@speculo.app"))
+    {
+        db.Users.Add(new Speculo.Identity.Models.User
+        {
+            Id = Guid.NewGuid(),
+            Email = "guest@speculo.app",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Guest123!"),
+            FullName = "Guest Demo",
+            RegisteredAt = DateTime.UtcNow
+        });
+        db.SaveChanges();
+    }
 }
 
 app.UseMiddleware<SecurityHeadersMiddleware>();

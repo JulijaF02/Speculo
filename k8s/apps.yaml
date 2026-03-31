@@ -21,14 +21,22 @@ spec:
     spec:
       containers:
       - name: identity
-        image: speculoacr2025.azurecr.io/speculo-identity:latest
+        image: speculoacriczfo0.azurecr.io/speculo-identity:latest
         env:
         - name: ASPNETCORE_ENVIRONMENT
-          value: "Development"
+          value: "Production"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: speculo-secrets
+              key: db-password
         - name: ConnectionStrings__IdentityConnection
-          value: "Host=identity-db;Port=5432;Database=speculo_identity;Username=postgres;Password=postgres"
+          value: "Host=identity-db;Port=5432;Database=speculo_identity;Username=postgres;Password=$(DB_PASSWORD)"
         - name: JwtSettings__Secret
-          value: "super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars"
+          valueFrom:
+            secretKeyRef:
+              name: speculo-secrets
+              key: jwt-secret
         - name: JwtSettings__Issuer
           value: "Speculo"
         - name: JwtSettings__Audience
@@ -36,9 +44,28 @@ spec:
         - name: Kafka__BootstrapServers
           value: "kafka:29092"
         - name: Frontend__Url
-          value: "http://localhost"
+          value: "http://speculo-app.westus2.cloudapp.azure.com"
         ports:
         - containerPort: 5001
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5001
+          initialDelaySeconds: 10
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
@@ -72,22 +99,51 @@ spec:
     spec:
       containers:
       - name: tracking-api
-        image: speculoacr2025.azurecr.io/speculo-tracking:latest
+        image: speculoacriczfo0.azurecr.io/speculo-tracking:latest
         env:
         - name: ASPNETCORE_ENVIRONMENT
-          value: "Development"
+          value: "Production"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: speculo-secrets
+              key: db-password
         - name: ConnectionStrings__DefaultConnection
-          value: "Host=tracking-db;Port=5432;Database=speculo;Username=postgres;Password=postgres"
+          value: "Host=tracking-db;Port=5432;Database=speculo;Username=postgres;Password=$(DB_PASSWORD)"
         - name: JwtSettings__Secret
-          value: "super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars"
+          valueFrom:
+            secretKeyRef:
+              name: speculo-secrets
+              key: jwt-secret
         - name: JwtSettings__Issuer
           value: "Speculo"
         - name: JwtSettings__Audience
           value: "SpeculoUsers"
         - name: Kafka__BootstrapServers
           value: "kafka:29092"
+        - name: Frontend__Url
+          value: "http://speculo-app.westus2.cloudapp.azure.com"
         ports:
         - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
@@ -121,10 +177,10 @@ spec:
     spec:
       containers:
       - name: analytics
-        image: speculoacr2025.azurecr.io/speculo-analytics:latest
+        image: speculoacriczfo0.azurecr.io/speculo-analytics:latest
         env:
         - name: ASPNETCORE_ENVIRONMENT
-          value: "Development"
+          value: "Production"
         - name: MongoDB__ConnectionString
           value: "mongodb://mongo:27017"
         - name: MongoDB__DatabaseName
@@ -134,15 +190,37 @@ spec:
         - name: Kafka__BootstrapServers
           value: "kafka:29092"
         - name: Jwt__Secret
-          value: "super-secret-key-for-speculo-jwt-tokens-2024-min-32-chars"
+          valueFrom:
+            secretKeyRef:
+              name: speculo-secrets
+              key: jwt-secret
         - name: Jwt__Issuer
           value: "Speculo"
         - name: Jwt__Audience
           value: "SpeculoUsers"
         - name: Frontend__Url
-          value: "http://localhost"
+          value: "http://speculo-app.westus2.cloudapp.azure.com"
         ports:
         - containerPort: 5002
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 10
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
@@ -176,17 +254,38 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: speculoacr2025.azurecr.io/speculo-frontend:latest
+        image: speculoacriczfo0.azurecr.io/speculo-frontend:latest
         ports:
         - containerPort: 80
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 150m
+            memory: 128Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 3
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
   namespace: speculo
+  annotations:
+    service.beta.kubernetes.io/azure-dns-label-name: speculo-app
 spec:
-  type: LoadBalancer # This exposes the frontend to the public internet!
+  type: LoadBalancer
   selector:
     app: frontend
   ports:

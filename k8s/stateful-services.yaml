@@ -2,6 +2,42 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: speculo
+
+---
+# ── Persistent Volume Claims ─────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: identity-db-pvc
+  namespace: speculo
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tracking-db-pvc
+  namespace: speculo
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+  namespace: speculo
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+
 ---
 # ── Identity DB (PostgreSQL) ──────────────────────────────────────────────────
 apiVersion: apps/v1
@@ -26,11 +62,39 @@ spec:
         - name: POSTGRES_USER
           value: "postgres"
         - name: POSTGRES_PASSWORD
-          value: "postgres"
+          valueFrom:
+            secretKeyRef:
+              name: speculo-secrets
+              key: db-password
         - name: POSTGRES_DB
           value: "speculo_identity"
         ports:
         - containerPort: 5432
+        volumeMounts:
+        - name: identity-db-storage
+          mountPath: /var/lib/postgresql/data
+          subPath: pgdata
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres"]
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: identity-db-storage
+        persistentVolumeClaim:
+          claimName: identity-db-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -69,11 +133,39 @@ spec:
         - name: POSTGRES_USER
           value: "postgres"
         - name: POSTGRES_PASSWORD
-          value: "postgres"
+          valueFrom:
+            secretKeyRef:
+              name: speculo-secrets
+              key: db-password
         - name: POSTGRES_DB
           value: "speculo"
         ports:
         - containerPort: 5432
+        volumeMounts:
+        - name: tracking-db-storage
+          mountPath: /var/lib/postgresql/data
+          subPath: pgdata
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres"]
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: tracking-db-storage
+        persistentVolumeClaim:
+          claimName: tracking-db-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -110,6 +202,30 @@ spec:
         image: mongo:7
         ports:
         - containerPort: 27017
+        volumeMounts:
+        - name: mongo-storage
+          mountPath: /data/db
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          exec:
+            command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command: ["mongosh", "--eval", "db.adminCommand('ping')"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: mongo-storage
+        persistentVolumeClaim:
+          claimName: mongo-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -146,6 +262,23 @@ spec:
         image: redis:7-alpine
         ports:
         - containerPort: 6379
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 150m
+            memory: 128Mi
+        livenessProbe:
+          exec:
+            command: ["redis-cli", "ping"]
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command: ["redis-cli", "ping"]
+          initialDelaySeconds: 5
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
@@ -162,8 +295,6 @@ spec:
 
 ---
 # ── Zookeeper & Kafka ────────────────────────────────────────────────────────
-# Note: In a real production environment, you would use Strimzi or a managed Kafka.
-# This assumes a single-broker Dev setup similar to the docker-compose.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -189,6 +320,13 @@ spec:
           value: "2000"
         ports:
         - containerPort: 2181
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
@@ -240,6 +378,13 @@ spec:
         ports:
         - containerPort: 9092
         - containerPort: 29092
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
 ---
 apiVersion: v1
 kind: Service

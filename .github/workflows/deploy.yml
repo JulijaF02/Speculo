@@ -5,8 +5,8 @@ on:
     branches: [ main ]
 
 env:
-  ACR_NAME: speculoacr2025
-  ACR_LOGIN_SERVER: speculoacr2025.azurecr.io
+  ACR_NAME: speculoacriczfo0
+  ACR_LOGIN_SERVER: speculoacriczfo0.azurecr.io
   AKS_CLUSTER: speculo-aks
   AKS_RESOURCE_GROUP: speculo-rg
   NAMESPACE: speculo
