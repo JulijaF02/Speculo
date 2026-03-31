@@ -2,7 +2,7 @@
 
 > A distributed lifestyle tracking platform built with .NET microservices, deployed on Azure Kubernetes Service.
 
-**Live**: [http://speculo-app.eastus.cloudapp.azure.com](http://speculo-app.eastus.cloudapp.azure.com)
+**Live**: [[http://speculo-app.eastus.cloudapp.azure.com](http://speculo-app.eastus.cloudapp.azure.com)](http://speculo-app.westus2.cloudapp.azure.com/)
 
 ---
 
