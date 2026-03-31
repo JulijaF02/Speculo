@@ -49,10 +49,10 @@ spec:
         - containerPort: 5001
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 25m
+            memory: 64Mi
           limits:
-            cpu: 250m
+            cpu: 200m
             memory: 256Mi
         livenessProbe:
           httpGet:
@@ -127,10 +127,10 @@ spec:
         - containerPort: 8080
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 25m
+            memory: 64Mi
           limits:
-            cpu: 250m
+            cpu: 200m
             memory: 256Mi
         livenessProbe:
           httpGet:
@@ -204,10 +204,10 @@ spec:
         - containerPort: 5002
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 25m
+            memory: 64Mi
           limits:
-            cpu: 250m
+            cpu: 200m
             memory: 256Mi
         livenessProbe:
           httpGet:
@@ -259,10 +259,10 @@ spec:
         - containerPort: 80
         resources:
           requests:
-            cpu: 50m
-            memory: 64Mi
+            cpu: 10m
+            memory: 32Mi
           limits:
-            cpu: 150m
+            cpu: 100m
             memory: 128Mi
         livenessProbe:
           httpGet:
