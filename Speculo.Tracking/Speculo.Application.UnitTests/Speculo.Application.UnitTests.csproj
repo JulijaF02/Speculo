@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Speculo.Application\Speculo.Application.csproj" />
-    <ProjectReference Include="..\Speculo.Contracts\Speculo.Contracts.csproj" />
+    <ProjectReference Include="..\..\Speculo.Contracts\Speculo.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
