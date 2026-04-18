@@ -10,57 +10,51 @@
 
 Speculo gives users a single dashboard to track and reflect on four pillars of daily life:
 
-- **Mood** — Log emotional state on a 1-10 scale with notes
+- **Mood** — Log emotional state on a 1–10 scale with notes
 - **Sleep** — Record hours slept and sleep quality
 - **Workouts** — Track exercise type, duration, and intensity
 - **Finances** — Log income and expenses by category
 
-Events flow through an event-driven pipeline and are projected into real-time analytics on the dashboard.
+Events are written to the Tracking service, published to Kafka, consumed by the Analytics service, and projected into a MongoDB read model — giving the dashboard real-time aggregated stats.
+
+---
 
 ## Architecture
 
 ```
-                    ┌─────────────┐
-                    │   React UI  │
-                    │   (Nginx)   │
-                    └──────┬──────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-      ┌───────▼──┐  ┌──────▼───┐  ┌────▼──────┐
-      │ Identity │  │ Tracking │  │ Analytics │
-      │  Service │  │  Service │  │  Service  │
-      │ (Auth)   │  │ (Write)  │  │  (Read)   │
-      └───┬──────┘  └──┬───┬──┘  └──┬────┬───┘
-          │             │   │        │    │
-      ┌───▼───┐   ┌────▼┐  │   ┌────▼┐ ┌─▼───┐
-      │Postgres│   │Postgres  │MongoDB│ │Redis│
-      └───────┘   └─────┘  │   └─────┘ └─────┘
-                            │
-                       ┌────▼────┐
-                       │  Kafka  │
-                       └────┬────┘
-                            │
-                       ┌────▼──────┐
-                       │ Analytics │
-                       │ Consumer  │
-                       └───────────┘
+── HTTP (synchronous) ──────────────────────────────────────────────────────
+
+  React UI (Nginx)
+      ├── Identity Service  (Auth)   →  Postgres
+      ├── Tracking Service  (Write)  →  Postgres
+      └── Analytics Service (Read)   →  Redis (cache-aside) → MongoDB (fallback)
+
+── Events (asynchronous) ───────────────────────────────────────────────────
+
+  Tracking Service  ──publishes──►  Kafka  ──consumed by──►  Analytics Service
+                                                               └─► upserts MongoDB projection
+                                                               └─► invalidates Redis cache
 ```
+
+The Analytics Service runs both roles in a single deployment: an HTTP read API and a Kafka `BackgroundService` consumer. There is no separate consumer process.
 
 ### Services
 
 | Service | Responsibility | Database | Port |
 |---------|---------------|----------|------|
-| **Identity** | Registration, login, JWT auth (BCrypt hashing) | PostgreSQL | 5001 |
-| **Tracking** | Event ingestion, validation, command handling | PostgreSQL | 5000 |
-| **Analytics** | Read projections, dashboard queries, caching | MongoDB + Redis | 5002 |
+| **Identity** | Registration, login, JWT issuance (BCrypt hashing) | PostgreSQL | 5001 |
+| **Tracking** | Event ingestion, validation, CQRS command handling | PostgreSQL | 5000 |
+| **Analytics** | Read projections, dashboard queries, Redis caching | MongoDB + Redis | 5002 |
 
-### Key Patterns
+### Key Design Decisions
 
-- **CQRS** — Commands go to Tracking (PostgreSQL), queries served by Analytics (MongoDB). Separate write and read models optimized for their workloads.
-- **Event-Driven Architecture** — Tracking publishes domain events to Kafka. Analytics consumes them asynchronously to build materialized views. Services are fully decoupled.
-- **Event-Driven Cache Invalidation** — Redis cache is invalidated when new events are consumed, ensuring dashboard data is fresh without polling.
-- **API Gateway** — Nginx reverse proxy in the frontend container routes `/api/identity/`, `/api/tracking/`, `/api/analytics/` to backend services. Single entry point for the client.
+- **CQRS** — Commands go to Tracking (PostgreSQL event store), queries are served by Analytics (MongoDB). Write and read models are optimised independently.
+- **Event-driven** — Tracking publishes typed integration events to Kafka. Analytics consumes them asynchronously to build materialised views. Services share only `Speculo.Contracts` — no direct dependencies.
+- **Idempotent consumers** — Each Kafka message carries an `event-id` header. The consumer checks a `ProcessedEvents` collection in MongoDB before applying a projection, making it safe under at-least-once delivery.
+- **Cache-aside with Redis** — Dashboard reads hit Redis first (5-minute TTL). On every Kafka event consumed, the affected user's cache key is deleted, so the next read gets a fresh projection from MongoDB.
+- **API Gateway** — Nginx in the frontend container routes `/api/identity/`, `/api/tracking/`, and `/api/analytics/` to the respective backend services. Single entry point for the client.
+
+---
 
 ## Tech Stack
 
@@ -68,30 +62,35 @@ Events flow through an event-driven pipeline and are projected into real-time an
 |-------|-------------|
 | Backend | .NET 9, ASP.NET Core, Entity Framework Core, MediatR, FluentValidation |
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS |
-| Messaging | Apache Kafka, ZooKeeper |
+| Messaging | Apache Kafka |
 | Databases | PostgreSQL 17, MongoDB 7 |
 | Caching | Redis 7 |
 | Infrastructure | Docker, Kubernetes (AKS), Azure Container Registry, Nginx |
-| CI | GitHub Actions (build + test on every PR) |
+| CI/CD | GitHub Actions — build + test on every PR; build images, push to ACR, deploy to AKS on merge to `main` |
+
+---
 
 ## Project Structure
 
 ```
-├── Speculo.API/                    # Tracking Service (commands + events)
-├── Speculo.Identity/               # Identity Service (auth + JWT)
-├── Speculo.Analytics/              # Analytics Service (projections + queries)
-├── Speculo.Application/            # Application layer (CQRS handlers, MediatR)
-├── Speculo.Domain/                 # Domain entities and interfaces
-├── Speculo.Infrastructure/         # EF Core, repositories, Kafka producer
-├── Speculo.Contracts/              # Shared DTOs and event contracts
-├── Speculo.Application.UnitTests/  # Unit tests (xUnit)
+├── Speculo.Tracking/               # Tracking microservice
+│   ├── Speculo.API/                #   ASP.NET Core entry point
+│   ├── Speculo.Application/        #   CQRS handlers, MediatR pipelines
+│   ├── Speculo.Domain/             #   Entities and domain events
+│   ├── Speculo.Infrastructure/     #   EF Core, Kafka producer, repositories
+│   └── Speculo.Application.UnitTests/  # xUnit tests
+├── Speculo.Identity/               # Identity microservice (auth + JWT)
+├── Speculo.Analytics/              # Analytics microservice (projections + queries)
+├── Speculo.Contracts/              # Shared Kafka event contracts
 ├── speculo-client/                 # React frontend
-├── k8s/                            # Kubernetes manifests
-├── docker-compose.yml              # Local development orchestration
-├── Dockerfile                      # Tracking API image
-├── Dockerfile.identity             # Identity API image
-└── Dockerfile.analytics            # Analytics API image
+├── k8s/                            # Kubernetes manifests (AKS)
+├── docker-compose.yml              # Local development stack
+├── Dockerfile                      # Tracking service image
+├── Dockerfile.identity             # Identity service image
+└── Dockerfile.analytics            # Analytics service image
 ```
+
+---
 
 ## Getting Started
 
@@ -99,27 +98,38 @@ Events flow through an event-driven pipeline and are projected into real-time an
 - Docker Desktop
 
 ### Run Locally
+
 ```bash
 docker compose up -d --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — register an account, log some events, and check the dashboard.
+Open [http://localhost:3000](http://localhost:3000) — register an account, log some events, and watch the dashboard update.
 
 ### Run Tests
+
 ```bash
 dotnet test
 ```
 
+---
+
 ## Deployment
 
-Production runs on **Azure Kubernetes Service (AKS)** with images stored in **Azure Container Registry**.
+Production runs on **Azure Kubernetes Service** with images stored in **Azure Container Registry** (`speculoacr2025`).
+
+Deployment is fully automated — every push to `main` triggers the GitHub Actions CD pipeline:
+
+1. Builds all four Docker images (tracking, identity, analytics, frontend)
+2. Pushes them to ACR tagged with the commit SHA and `latest`
+3. Connects to the AKS cluster (`speculo-aks`) and runs `kubectl apply`
+4. Rolls out a restart on each deployment to pull the new images
+
+To deploy manually:
 
 ```bash
-# Apply infrastructure (databases, Kafka, Redis)
+# Apply stateful infrastructure (databases, Kafka, Redis)
 kubectl apply -f k8s/stateful-services.yaml
 
-# Deploy application services + frontend
+# Deploy application services and frontend
 kubectl apply -f k8s/apps.yaml
 ```
-
-Kubernetes manifests are in `/k8s`. CI runs automatically via GitHub Actions on every push and PR to `main`.
