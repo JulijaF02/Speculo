@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Domain", "Speculo.Domain\Speculo.Domain.csproj", "{6F1138B5-3893-4B79-BECE-EF35085E0DAD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Domain", "Speculo.Tracking\Speculo.Domain\Speculo.Domain.csproj", "{6F1138B5-3893-4B79-BECE-EF35085E0DAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Application", "Speculo.Application\Speculo.Application.csproj", "{9398CF7B-DAD3-480F-8ADF-B49A8CE036C0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Application", "Speculo.Tracking\Speculo.Application\Speculo.Application.csproj", "{9398CF7B-DAD3-480F-8ADF-B49A8CE036C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Infrastructure", "Speculo.Infrastructure\Speculo.Infrastructure.csproj", "{8B6C6546-B6E0-4E2C-9D83-13B8A9E31D09}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Infrastructure", "Speculo.Tracking\Speculo.Infrastructure\Speculo.Infrastructure.csproj", "{8B6C6546-B6E0-4E2C-9D83-13B8A9E31D09}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.API", "Speculo.API\Speculo.API.csproj", "{7820500D-EBFD-4141-B206-64C624E3A082}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.API", "Speculo.Tracking\Speculo.API\Speculo.API.csproj", "{7820500D-EBFD-4141-B206-64C624E3A082}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Application.UnitTests", "Speculo.Application.UnitTests\Speculo.Application.UnitTests.csproj", "{417C958A-A872-4A10-81DF-C07DA66C346B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Application.UnitTests", "Speculo.Tracking\Speculo.Application.UnitTests\Speculo.Application.UnitTests.csproj", "{417C958A-A872-4A10-81DF-C07DA66C346B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Speculo.Contracts", "Speculo.Contracts\Speculo.Contracts.csproj", "{0E0F02FA-3A06-449E-BF5A-FD40E6B64C79}"
 EndProject
