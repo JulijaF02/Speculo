@@ -21,19 +21,22 @@ Events are written to the Tracking service, published to Kafka, consumed by the 
 
 ## Architecture
 
-```
-── HTTP (synchronous) ──────────────────────────────────────────────────────
+```mermaid
+flowchart TD
+    UI["⚛️ React UI\n(Nginx)"]
 
-  React UI (Nginx)
-      ├── Identity Service  (Auth)   →  Postgres
-      ├── Tracking Service  (Write)  →  Postgres
-      └── Analytics Service (Read)   →  Redis (cache-aside) → MongoDB (fallback)
+    UI --> Identity["Identity Service\n(Auth)"]
+    UI --> Tracking["Tracking Service\n(Write)"]
+    UI --> Analytics["Analytics Service\n(Read)"]
 
-── Events (asynchronous) ───────────────────────────────────────────────────
+    Identity --> PG1[("Postgres")]
+    Tracking --> PG2[("Postgres")]
 
-  Tracking Service  ──publishes──►  Kafka  ──consumed by──►  Analytics Service
-                                                               └─► upserts MongoDB projection
-                                                               └─► invalidates Redis cache
+    Analytics --> Redis[("Redis\ncache-aside")]
+    Redis -->|fallback| MongoDB[("MongoDB")]
+
+    Tracking -->|publishes events| Kafka[["Kafka"]]
+    Kafka -->|consumes & projects| Analytics
 ```
 
 The Analytics Service runs both roles in a single deployment: an HTTP read API and a Kafka `BackgroundService` consumer. There is no separate consumer process.
