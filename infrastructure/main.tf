@@ -32,7 +32,7 @@ variable "subscription_id" {
 }
 
 variable "location" {
-  default = "West US 2"
+  default = "East US 2"
 }
 
 variable "resource_group_name" {
@@ -73,7 +73,7 @@ resource "azurerm_kubernetes_cluster" "speculo_aks" {
   default_node_pool {
     name       = "default"
     node_count = 1
-    vm_size    = "Standard_B2s_v2"
+    vm_size    = "Standard_D2s_v3"
   }
 
   identity {
